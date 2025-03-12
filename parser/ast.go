@@ -13,54 +13,60 @@ type Stmt interface{} // nolint: iface
 type (
 	Text struct {
 		Pos token.Position
-		Val string
+		Val []string
 	}
 
 	Lit struct {
-		Pos    token.Position
-		Typ    token.Type
-		Val    string
-		PostWs string
+		Pos token.Position
+		Typ token.Kind
+		Val string
 	}
 
 	Ident struct {
-		Pos    token.Position
-		Name   string
-		PostWs string
+		Pos  token.Position
+		Name string
 	}
 
 	BinaryExpr struct {
-		X        Expr
-		OpPos    token.Position
-		PostOpWs string
-		Op       token.Type
-		Y        Expr
+		X     Expr
+		Op    token.Kind
+		OpPos token.Position
+		Y     Expr
+	}
+
+	TernaryExpr struct {
+		Condition Expr
+		Do        token.Kind
+		DoPos     token.Position
+		TrueExpr  Expr
+		Else      token.Kind
+		ElsePos   token.Position
+		FalseExpr Expr
+	}
+
+	StmtTag struct {
+		PreLStmtWs string
+		LStmt      token.Position
+		Kw         token.Kind
+		KwPos      token.Position
+		RStmt      token.Position
+	}
+
+	StmtTagWithExpr struct {
+		StmtTag
+		Body Expr
 	}
 
 	ExprBlock struct {
-		LBrace  token.Position
-		PostLWs string
-		Body    Expr
-		RBrace  token.Position
+		LBrace token.Position
+		Body   Expr
+		RBrace token.Position
 	}
 
 	IfStmt struct {
-		StmtBeg    token.Position
-		PostStmtWs string
-		KwPos      token.Position
-		PostKwWs   string
-		Condition  Expr
-		Body       []Node
-		Else       []Node
-		StmtEnd    token.Position
-	}
-
-	GenIfStmt struct {
-		StmtBeg    token.Position
-		PostStmtWs string
-		KwPos      token.Position
-		PostKwWs   string
-		Condition  Expr
-		StmtEnd    token.Position
+		BegTag StmtTagWithExpr
+		Body   []Node
+		Else   []Node
+		EndTag StmtTag
 	}
 )

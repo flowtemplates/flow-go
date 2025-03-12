@@ -5,19 +5,19 @@ import (
 	"slices"
 )
 
-type Type int
+type Kind int
 
-func (t Type) String() string {
-	return TokenString(t)
+func (k Kind) String() string {
+	return TokenString(k)
 }
 
 const (
-	EOF Type = iota
+	EOF Kind = iota
 	ILLEGAL
 
 	valueable_beg
 	COMM_TEXT
-	LBR
+	LNBR
 	TEXT
 	WS
 
@@ -109,7 +109,7 @@ var tokens = []string{
 
 	COMM_TEXT: "COMMENT",
 	TEXT:      "TEXT",
-	LBR:       "LBR",
+	LNBR:      "LBR",
 	WS:        "WHITESPACE",
 
 	IDENT: "IDENT",
@@ -182,55 +182,64 @@ var tokens = []string{
 	DO:      "do",
 }
 
-func TokenString(t Type) string {
-	return tokens[t]
+func TokenString(k Kind) string {
+	return tokens[k]
 }
 
-func TokenRune(t Type) rune {
-	return rune(tokens[t][0])
+func TokenRune(k Kind) rune {
+	return rune(tokens[k][0])
 }
 
 type Token struct {
-	Typ Type
-	Val string
-	Pos Position
+	Kind Kind
+	Val  string
+	Pos  Position
 }
 
 func (t Token) String() string {
 	if t.IsValueable() {
-		switch t.Typ {
+		switch t.Kind {
 		case EOF:
 			return "EOF"
 		case TEXT:
-			return fmt.Sprintf("{Typ: %s, Val: %.10q, Pos: %s}", TokenString(t.Typ), t.Val, t.Pos)
+			return fmt.Sprintf("{Kind: %s, Val: %.10q, Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
 		default:
-			return fmt.Sprintf("{Typ: %s, Val: %q, Pos: %s}", TokenString(t.Typ), t.Val, t.Pos)
+			return fmt.Sprintf("{Kind: %s, Val: %q, Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
 		}
 	}
 
-	return fmt.Sprintf("{Typ: %[1]s, Val: %[1]s, Pos: %s}", TokenString(t.Typ), t.Pos)
+	return fmt.Sprintf("{Kind: %[1]s, Val: %[1]s, Pos: %s}", TokenString(t.Kind), t.Pos)
 }
 
-func (t Token) IsOneOfMany(types ...Type) bool {
-	return slices.Contains(types, t.Typ)
+func (t Token) IsOneOfMany(types ...Kind) bool {
+	return slices.Contains(types, t.Kind)
 }
 
 func (t Token) IsValueable() bool {
-	return valueable_beg < t.Typ && t.Typ < valueable_end
+	return valueable_beg < t.Kind && t.Kind < valueable_end
 }
 
-func GetOperators() []Type {
-	res := make([]Type, operator_end-operator_beg)
+func GetOperators() []Kind {
+	res := make([]Kind, operator_end-operator_beg)
 
 	for i := range int(operator_end) - int(operator_beg) {
-		res[i] = Type(i + int(operator_beg))
+		res[i] = Kind(i + int(operator_beg))
 	}
 
 	return res
 }
 
+func GetKeywords() []Kind {
+	res := make([]Kind, keyword_end-keyword_beg)
+
+	for i := range int(keyword_end) - int(keyword_beg) {
+		res[i] = Kind(i + int(keyword_beg))
+	}
+
+	return res
+}
 func (t Token) IsComparisonOp() bool {
-	return comparison_op_beg < t.Typ && t.Typ < comparison_op_end
+	return comparison_op_beg < t.Kind && t.Kind < comparison_op_end
 }
 
 func IsNotOp(r rune) bool {

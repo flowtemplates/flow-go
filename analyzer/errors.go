@@ -12,6 +12,10 @@ type TypeError struct {
 	Val          string
 }
 
-func (e *TypeError) String() string {
+//	func (e *TypeError) String() string {
+//		return fmt.Sprintf("TypeError: Variable '%s' expected type '%s'", e.Name, e.ExpectedType)
+//	}
+
+func (e TypeError) Error() string {
 	return fmt.Sprintf("TypeError: Variable '%s' expected type '%s'", e.Name, e.ExpectedType)
 }

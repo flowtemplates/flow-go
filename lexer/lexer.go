@@ -34,7 +34,7 @@ func TokensFromString(input string) []token.Token {
 	var tokens []token.Token
 	for {
 		tok := l.NextToken()
-		if tok.Typ == token.EOF {
+		if tok.Kind == token.EOF {
 			break
 		}
 		tokens = append(tokens, tok)
@@ -43,12 +43,12 @@ func TokensFromString(input string) []token.Token {
 	return tokens
 }
 
-func (l *Lexer) emit(t token.Type) {
+func (l *Lexer) emit(t token.Kind) {
 	if l.start.Offset < l.pos.Offset {
 		l.tokens <- token.Token{
-			Typ: t,
-			Val: l.input[l.start.Offset:l.pos.Offset],
-			Pos: l.start,
+			Kind: t,
+			Val:  l.input[l.start.Offset:l.pos.Offset],
+			Pos:  l.start,
 		}
 		l.start = l.pos
 	}

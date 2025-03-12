@@ -8,14 +8,14 @@ import (
 	"github.com/flowtemplates/flow-go/types"
 )
 
-type Variable struct {
+type Symbol struct {
 	Name string
 	Typ  types.Type
 }
 
 type TypeMap map[string]types.Type
 
-func addToTypeMap(v Variable, tm TypeMap) error {
+func addToTypeMap(v Symbol, tm TypeMap) error {
 	if typ, exists := tm[v.Name]; !exists || typ == types.Any {
 		tm[v.Name] = v.Typ
 	} else if v.Typ != types.Any && v.Typ != typ {
@@ -28,7 +28,7 @@ func addToTypeMap(v Variable, tm TypeMap) error {
 func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Type {
 	switch e := expr.(type) {
 	case parser.Ident:
-		if err := addToTypeMap(Variable{
+		if err := addToTypeMap(Symbol{
 			Name: e.Name,
 			Typ:  types.Any,
 		}, tm); err != nil {
@@ -53,12 +53,12 @@ func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Typ
 			if t1 == types.String || t2 == types.String {
 				// If one side is a string, enforce string type
 				if ident, ok := e.X.(parser.Ident); ok {
-					if err := addToTypeMap(Variable{Name: ident.Name, Typ: types.String}, tm); err != nil {
+					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
 						*errs = append(*errs, err)
 					}
 				}
 				if ident, ok := e.Y.(parser.Ident); ok {
-					if err := addToTypeMap(Variable{Name: ident.Name, Typ: types.String}, tm); err != nil {
+					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
 						*errs = append(*errs, err)
 					}
 				}
@@ -66,12 +66,12 @@ func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Typ
 			} else if t1 == types.Number || t2 == types.Number {
 				// If one side is a number, enforce number type
 				if ident, ok := e.X.(parser.Ident); ok {
-					if err := addToTypeMap(Variable{Name: ident.Name, Typ: types.Number}, tm); err != nil {
+					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
 						*errs = append(*errs, err)
 					}
 				}
 				if ident, ok := e.Y.(parser.Ident); ok {
-					if err := addToTypeMap(Variable{Name: ident.Name, Typ: types.Number}, tm); err != nil {
+					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
 						*errs = append(*errs, err)
 					}
 				}

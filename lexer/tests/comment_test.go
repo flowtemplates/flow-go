@@ -12,43 +12,43 @@ func TestComments(t *testing.T) {
 			name:  "Empty comment",
 			input: "{##}",
 			expected: []token.Token{
-				{Typ: token.LCOMM},
-				{Typ: token.RCOMM},
+				{Kind: token.LCOMM},
+				{Kind: token.RCOMM},
 			},
 		},
 		{
 			name:  "Single comment",
 			input: "{# no comments.. #}",
 			expected: []token.Token{
-				{Typ: token.LCOMM},
-				{Typ: token.COMM_TEXT, Val: ` no comments.. `},
-				{Typ: token.RCOMM},
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: ` no comments.. `},
+				{Kind: token.RCOMM},
 			},
 		},
 		{
 			name:  "Multiline comment",
 			input: "{# line 1\nline 2\n\nline 3 #}",
 			expected: []token.Token{
-				{Typ: token.LCOMM},
-				{Typ: token.COMM_TEXT, Val: " line 1\nline 2\n\nline 3 "},
-				{Typ: token.RCOMM},
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: " line 1\nline 2\n\nline 3 "},
+				{Kind: token.RCOMM},
 			},
 		},
 		{
 			name:  "Multiple comments",
 			input: "{# line 1 #}\n{# line 2 #}\n{# line 3 #}",
 			expected: []token.Token{
-				{Typ: token.LCOMM},
-				{Typ: token.COMM_TEXT, Val: " line 1 "},
-				{Typ: token.RCOMM},
-				{Typ: token.TEXT, Val: "\n"},
-				{Typ: token.LCOMM},
-				{Typ: token.COMM_TEXT, Val: " line 2 "},
-				{Typ: token.RCOMM},
-				{Typ: token.TEXT, Val: "\n"},
-				{Typ: token.LCOMM},
-				{Typ: token.COMM_TEXT, Val: " line 3 "},
-				{Typ: token.RCOMM},
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: " line 1 "},
+				{Kind: token.RCOMM},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: " line 2 "},
+				{Kind: token.RCOMM},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: " line 3 "},
+				{Kind: token.RCOMM},
 			},
 		},
 	}
@@ -58,10 +58,18 @@ func TestComments(t *testing.T) {
 func TestCommentsEdgeCases(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:  "Comment not terminated",
+			name:  "Only comm begin",
 			input: "{#",
 			expected: []token.Token{
-				{Typ: token.LCOMM},
+				{Kind: token.LCOMM},
+			},
+		},
+		{
+			name:  "Comment not terminated",
+			input: "{# Some content",
+			expected: []token.Token{
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: " Some content"},
 			},
 		},
 	}

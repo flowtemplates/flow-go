@@ -3,11 +3,10 @@ package analyzer
 import (
 	"github.com/flowtemplates/flow-go/lexer"
 	"github.com/flowtemplates/flow-go/parser"
-	"github.com/flowtemplates/flow-go/renderer"
 	"github.com/flowtemplates/flow-go/types"
 )
 
-func Typecheck(scope renderer.Scope, tm TypeMap) []TypeError {
+func Typecheck(scope map[string]string, tm TypeMap) []TypeError {
 	errs := []TypeError{}
 	for name, typ := range tm {
 		if typ == types.Any {
@@ -40,7 +39,11 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 		case parser.ExprBlock:
 			switch e := n.Body.(type) {
 			case parser.Ident:
-				if err := addToTypeMap(Variable{
+				if e.Name == "true" || e.Name == "false" {
+					continue
+				}
+
+				if err := addToTypeMap(Symbol{
 					Name: e.Name,
 					Typ:  types.String,
 				}, tm); err != nil {
@@ -49,9 +52,9 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 			}
 			parseExpressionTypes(n.Body, tm, &errs)
 		case parser.IfStmt:
-			switch e := n.Condition.(type) {
+			switch e := n.BegTag.Body.(type) {
 			case parser.Ident:
-				if err := addToTypeMap(Variable{
+				if err := addToTypeMap(Symbol{
 					Name: e.Name,
 					Typ:  types.Boolean,
 				}, tm); err != nil {

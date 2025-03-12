@@ -16,7 +16,7 @@ func TestGetTypeMap(t *testing.T) {
 			str:  "Hello world",
 			input: []parser.Node{
 				parser.Text{
-					Val: "Hello world",
+					Val: []string{"Hello world"},
 				},
 			},
 			expected:    analyzer.TypeMap{},
@@ -128,14 +128,14 @@ func TestGetTypeMap(t *testing.T) {
 			str:  "{%if var%}\ntext\n{%end%}",
 			input: []parser.Node{
 				parser.IfStmt{
-					PostKwWs: " ",
-					Condition: parser.Ident{
-						Name:   "var",
-						PostWs: "",
+					BegTag: parser.StmtTagWithExpr{
+						Body: parser.Ident{
+							Name: "var",
+						},
 					},
 					Body: []parser.Node{
 						parser.Text{
-							Val: "\ntext\n",
+							Val: []string{"\n", "text", "\n"},
 						},
 					},
 					Else: nil,
