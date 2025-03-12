@@ -8,7 +8,7 @@ import (
 type Type int
 
 func (t Type) String() string {
-	return *TokenString(t)
+	return TokenString(t)
 }
 
 const (
@@ -17,6 +17,7 @@ const (
 
 	valueable_beg
 	COMM_TEXT
+	LBR
 	TEXT
 	WS
 
@@ -108,6 +109,7 @@ var tokens = []string{
 
 	COMM_TEXT: "COMMENT",
 	TEXT:      "TEXT",
+	LBR:       "LBR",
 	WS:        "WHITESPACE",
 
 	IDENT: "IDENT",
@@ -180,13 +182,8 @@ var tokens = []string{
 	DO:      "do",
 }
 
-func TokenString(t Type) *string {
-	s := tokens[t]
-	if s == "" {
-		return nil
-	}
-
-	return &s
+func TokenString(t Type) string {
+	return tokens[t]
 }
 
 func TokenRune(t Type) rune {
@@ -205,13 +202,13 @@ func (t Token) String() string {
 		case EOF:
 			return "EOF"
 		case TEXT:
-			return fmt.Sprintf("{Typ: %s, Val: %.10q, Pos: %s}", *TokenString(t.Typ), t.Val, t.Pos)
+			return fmt.Sprintf("{Typ: %s, Val: %.10q, Pos: %s}", TokenString(t.Typ), t.Val, t.Pos)
 		default:
-			return fmt.Sprintf("{Typ: %s, Val: %q, Pos: %s}", *TokenString(t.Typ), t.Val, t.Pos)
+			return fmt.Sprintf("{Typ: %s, Val: %q, Pos: %s}", TokenString(t.Typ), t.Val, t.Pos)
 		}
 	}
 
-	return fmt.Sprintf("{Typ: %[1]s, Val: %[1]s, Pos: %s}", *TokenString(t.Typ), t.Pos)
+	return fmt.Sprintf("{Typ: %[1]s, Val: %[1]s, Pos: %s}", TokenString(t.Typ), t.Pos)
 }
 
 func (t Token) IsOneOfMany(types ...Type) bool {

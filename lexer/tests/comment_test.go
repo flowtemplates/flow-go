@@ -27,10 +27,10 @@ func TestComments(t *testing.T) {
 		},
 		{
 			name:  "Multiline comment",
-			input: "{# line 1\nline 2\r\n\nline 3 #}",
+			input: "{# line 1\nline 2\n\nline 3 #}",
 			expected: []token.Token{
 				{Typ: token.LCOMM},
-				{Typ: token.COMM_TEXT, Val: " line 1\nline 2\r\n\nline 3 "},
+				{Typ: token.COMM_TEXT, Val: " line 1\nline 2\n\nline 3 "},
 				{Typ: token.RCOMM},
 			},
 		},

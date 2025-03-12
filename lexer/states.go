@@ -10,7 +10,7 @@ import (
 type stateFn func(*Lexer) stateFn
 
 func (l *Lexer) lexToken(t token.Type, next stateFn) stateFn {
-	tokLen := len(*token.TokenString(t))
+	tokLen := len(token.TokenString(t))
 	l.pos.Offset += tokLen
 	l.pos.Column += tokLen
 	l.emit(t)
@@ -19,8 +19,8 @@ func (l *Lexer) lexToken(t token.Type, next stateFn) stateFn {
 
 func (l *Lexer) StartsWith(t token.Type) bool {
 	tokString := token.TokenString(t)
-	if tokString != nil {
-		return strings.HasPrefix(l.input[l.pos.Offset:], *tokString)
+	if tokString != "" {
+		return strings.HasPrefix(l.input[l.pos.Offset:], tokString)
 	}
 
 	return false
@@ -38,6 +38,16 @@ func (l *Lexer) tryTokens(nextState stateFn, tokens ...token.Type) stateFn {
 
 func lexText(l *Lexer) stateFn {
 	for {
+		r := l.peek()
+		if r == eof {
+			break
+		}
+
+		// switch r {
+		// case '\n':
+		// 	l.acceptRun()
+		// }
+
 		if l.StartsWith(token.LEXPR) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.LEXPR, lexExpr)
@@ -73,9 +83,7 @@ func lexText(l *Lexer) stateFn {
 			return l.lexToken(token.RSTMT, lexText)
 		}
 
-		if l.next() == eof {
-			break
-		}
+		l.next()
 	}
 
 	l.emit(token.TEXT)
@@ -113,7 +121,7 @@ func lexRealExpr(nextState stateFn) stateFn {
 
 func lexExpr(l *Lexer) stateFn {
 	if l.StartsWith(token.REXPR) {
-		return l.lexToken(token.REXPR, lexText)
+		return l.lexToken(token.REXPR, lexLineBreak)
 	}
 
 	if state := l.tryTokens(lexExpr, append(token.GetOperators(),
@@ -142,6 +150,19 @@ func lexComm(l *Lexer) stateFn {
 			return nil
 		}
 	}
+}
+
+func lexLineBreak(l *Lexer) stateFn {
+	r := l.peek()
+	switch r {
+	case '\n':
+		l.next()
+		l.emit(token.LBR)
+	case eof:
+		return nil
+	}
+
+	return lexText
 }
 
 func lexNum(nextState stateFn) stateFn {
@@ -208,7 +229,7 @@ func lexLineWhitespace(nextState stateFn) stateFn {
 
 func lexStmt(l *Lexer) stateFn {
 	if l.StartsWith(token.RSTMT) {
-		return l.lexToken(token.RSTMT, lexText)
+		return l.lexToken(token.RSTMT, lexLineBreak)
 	}
 
 	if state := l.tryTokens(lexStmt, append(token.GetOperators(),

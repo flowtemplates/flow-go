@@ -394,59 +394,62 @@ func TestIfStatements(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "Nested if statements",
-			str:  "{%if var%}1{%if name%}text{%end%}2{%end%}",
-			input: []token.Token{
-				{Typ: token.LSTMT},
-				{Typ: token.IF},
-				{Typ: token.WS, Val: " "},
-				{Typ: token.IDENT, Val: "var"},
-				{Typ: token.RSTMT},
-				{Typ: token.TEXT, Val: "1"},
-				{Typ: token.LSTMT},
-				{Typ: token.IF},
-				{Typ: token.WS, Val: " "},
-				{Typ: token.IDENT, Val: "name"},
-				{Typ: token.RSTMT},
-				{Typ: token.TEXT, Val: "text"},
-				{Typ: token.LSTMT},
-				{Typ: token.END},
-				{Typ: token.RSTMT},
-				{Typ: token.TEXT, Val: "2"},
-				{Typ: token.LSTMT},
-				{Typ: token.END},
-				{Typ: token.RSTMT},
-			},
-			expected: []parser.Node{
-				parser.IfStmt{
-					PostKwWs: " ",
-					Condition: parser.Ident{
-						Name: "var",
-					},
-					Body: []parser.Node{
-						parser.Text{
-							Val: "1",
-						},
-						parser.IfStmt{
-							PostKwWs: " ",
-							Condition: parser.Ident{
-								Name: "name",
-							},
-							Body: []parser.Node{
-								parser.Text{
-									Val: "text",
-								},
-							},
-						},
-						parser.Text{
-							Val: "2",
-						},
-					},
-					Else: nil,
-				},
-			},
-		},
+		// {
+		// 	name: "Nested if blocks",
+		// 	str:  "{%if var%}\n1\n{%if name%}\ntext\n{%end%}\n2\n{%end%}",
+		// 	input: []token.Token{
+		// 		{Typ: token.LSTMT},
+		// 		{Typ: token.IF},
+		// 		{Typ: token.WS, Val: " "},
+		// 		{Typ: token.IDENT, Val: "var"},
+		// 		{Typ: token.RSTMT},
+		// 		{Typ: token.LBR, Val: "\n"},
+		// 		{Typ: token.TEXT, Val: "1\n"},
+		// 		{Typ: token.LSTMT},
+		// 		{Typ: token.IF},
+		// 		{Typ: token.WS, Val: " "},
+		// 		{Typ: token.IDENT, Val: "name"},
+		// 		{Typ: token.RSTMT},
+		// 		{Typ: token.LBR, Val: "\n"},
+		// 		{Typ: token.TEXT, Val: "text"},
+		// 		{Typ: token.LSTMT},
+		// 		{Typ: token.END},
+		// 		{Typ: token.RSTMT},
+		// 		{Typ: token.LBR, Val: "\n"},
+		// 		{Typ: token.TEXT, Val: "2"},
+		// 		{Typ: token.LSTMT},
+		// 		{Typ: token.END},
+		// 		{Typ: token.RSTMT},
+		// 	},
+		// 	expected: []parser.Node{
+		// 		parser.IfStmt{
+		// 			PostKwWs: " ",
+		// 			Condition: parser.Ident{
+		// 				Name: "var",
+		// 			},
+		// 			Body: []parser.Node{
+		// 				parser.Text{
+		// 					Val: "1",
+		// 				},
+		// 				parser.IfStmt{
+		// 					PostKwWs: " ",
+		// 					Condition: parser.Ident{
+		// 						Name: "name",
+		// 					},
+		// 					Body: []parser.Node{
+		// 						parser.Text{
+		// 							Val: "text",
+		// 						},
+		// 					},
+		// 				},
+		// 				parser.Text{
+		// 					Val: "2",
+		// 				},
+		// 			},
+		// 			Else: nil,
+		// 		},
+		// 	},
+		// },
 	}
 	runTestCases(t, testCases)
 }

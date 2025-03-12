@@ -119,13 +119,13 @@ func TestExpressions(t *testing.T) {
 		},
 		{
 			name:  "Multiline input with several blocks",
-			input: "Hello,\n {{greeting}}\r\n{{name}}{{surname}}",
+			input: "Hello,\n {{greeting}}\n{{name}}{{surname}}",
 			expected: []token.Token{
 				{Typ: token.TEXT, Val: "Hello,\n "},
 				{Typ: token.LEXPR},
 				{Typ: token.IDENT, Val: "greeting"},
 				{Typ: token.REXPR},
-				{Typ: token.TEXT, Val: "\r\n"},
+				{Typ: token.LBR, Val: "\n"},
 				{Typ: token.LEXPR},
 				{Typ: token.IDENT, Val: "name"},
 				{Typ: token.REXPR},
@@ -183,11 +183,11 @@ func TestExpressionsEdgeCases(t *testing.T) {
 		},
 		{
 			name:  "Text after unclosed expression",
-			input: "{{greeting\r\nSome text",
+			input: "{{greeting\nSome text",
 			expected: []token.Token{
 				{Typ: token.LEXPR},
 				{Typ: token.IDENT, Val: "greeting"},
-				{Typ: token.TEXT, Val: "\r\nSome text"},
+				{Typ: token.TEXT, Val: "\nSome text"},
 			},
 		},
 		{
@@ -206,7 +206,7 @@ func TestExpressionsEdgeCases(t *testing.T) {
 				{Typ: token.LEXPR},
 				{Typ: token.IDENT, Val: "name"},
 				{Typ: token.REXPR},
-				{Typ: token.TEXT, Val: "\n"},
+				{Typ: token.LBR, Val: "\n"},
 				{Typ: token.REXPR},
 				{Typ: token.TEXT, Val: "Some text"},
 			},

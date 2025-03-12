@@ -19,14 +19,14 @@ func equal(gotTokens []token.Token, expectedTokens []token.Token) error {
 		got, expected := gotTokens[i], expectedTokens[i]
 
 		if got.Typ != expected.Typ {
-			return fmt.Errorf("wrong type: expected %s, got %s", got.Typ, expected.Typ)
+			return fmt.Errorf("wrong type: expected %s, got %s", expected.Typ, got.Typ)
 		}
 
 		var expectedValue string
 		if expected.IsValueable() {
 			expectedValue = expected.Val
 		} else {
-			expectedValue = *token.TokenString(expected.Typ)
+			expectedValue = token.TokenString(expected.Typ)
 		}
 
 		if got.Val != expectedValue {
@@ -55,6 +55,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				}
 				tokens = append(tokens, tok)
 			}
+
 			if err := equal(tokens, tc.expected); err != nil {
 				t.Errorf("%s\nInput: %s\nTest Case: %s\nExpected:\n%v\nGot:\n%v",
 					err, tc.input, tc.name, tc.expected, tokens)
