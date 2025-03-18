@@ -59,7 +59,7 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 func (l *Lexer) run() {
-	for state := lexText; state != nil; {
+	for state := lexLineWhitespace(lexText); state != nil; {
 		state = state(l)
 	}
 	close(l.tokens)

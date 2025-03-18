@@ -3,7 +3,6 @@ package renderer_test
 import (
 	"testing"
 
-	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/renderer"
 )
 
@@ -11,51 +10,39 @@ func TestIfStatements(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:     "Truthy if statement",
-			str:      "{%if var%}\ntext\n{%end%}",
-			expected: "\ntext\n",
-			input: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
-						Body: parser.Ident{
-							Name: "var",
-						},
-					},
-					Body: []parser.Node{
-						parser.Text{
-							Val: []string{"\n", "text", "\n"},
-						},
-					},
-					Else: nil,
-				},
-			},
-			scope: renderer.Scope{
-				"var": true,
-			},
-			errExpected: false,
+			input:    "{%if true%}\ntext\n{%end%}",
+			expected: "text\n",
+			scope:    renderer.Scope{},
 		},
 		{
 			name:     "Falsy if statement",
-			str:      "{%if var%}\ntext\n{%end%}",
+			input:    "{%if false%}\ntext\n{%end%}",
 			expected: "",
-			input: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
-						Body: parser.Ident{
-							Name: "var",
-						},
-					},
-					Body: []parser.Node{
-						parser.Text{
-							Val: []string{"\n", "text", "\n"},
-						},
-					},
-					Else: nil,
-				},
-			},
-			scope: renderer.Scope{
-				"var": false,
-			},
-			errExpected: false,
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "If with indentation",
+			input:    "\t{%if true%}\n\ttext\n\t{%end%}",
+			expected: "text\n",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "If with end with not matching indentation level",
+			input:    "{%if true%}\ntext\n\t{%end%}",
+			expected: "text\n",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "If with space indentation",
+			input:    "  {%if true%}\n  text\n  {%end%}",
+			expected: "text\n",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Nested ifs",
+			input:    "{%if true%}\n\t{%if true%}\n\ttext\n\t{%end%}\n{%end%}",
+			expected: "text\n",
+			scope:    renderer.Scope{},
 		},
 	}
 	runTestCases(t, testCases)

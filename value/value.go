@@ -20,12 +20,20 @@ func FromAny(value any) Valueable {
 	switch v := value.(type) {
 	case string:
 		return StringValue(v)
+	case *string:
+		return StringValue(*v)
 	case float64:
 		return NumberValue(v)
+	case *float64:
+		return NumberValue(*v)
 	case int:
 		return NumberValue(v)
+	case *int:
+		return NumberValue(*v)
 	case bool:
 		return BooleanValue(v)
+	case *bool:
+		return BooleanValue(*v)
 	default:
 		panic(fmt.Sprintf("cannot convert any to Valuable: unsupported type: %T", value))
 	}

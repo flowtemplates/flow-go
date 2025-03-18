@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/flowtemplates/flow-go/parser"
-	"github.com/flowtemplates/flow-go/token"
 	"github.com/flowtemplates/flow-go/types"
 )
 
@@ -47,41 +46,41 @@ func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Typ
 		parseExpressionTypes(e.TrueExpr, tm, errs)
 		parseExpressionTypes(e.FalseExpr, tm, errs)
 	case parser.BinaryExpr:
-		t1 := parseExpressionTypes(e.X, tm, errs)
-		t2 := parseExpressionTypes(e.Y, tm, errs)
+		// t1 := parseExpressionTypes(e.X, tm, errs)
+		// t2 := parseExpressionTypes(e.Y, tm, errs)
 
-		if e.Op == token.ADD {
-			if t1 == types.String || t2 == types.String {
-				// If one side is a string, enforce string type
-				if ident, ok := e.X.(parser.Ident); ok {
-					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
-						*errs = append(*errs, err)
-					}
-				}
-				if ident, ok := e.Y.(parser.Ident); ok {
-					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
-						*errs = append(*errs, err)
-					}
-				}
-				return types.String
-			} else if t1 == types.Number || t2 == types.Number {
-				// If one side is a number, enforce number type
-				if ident, ok := e.X.(parser.Ident); ok {
-					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
-						*errs = append(*errs, err)
-					}
-				}
-				if ident, ok := e.Y.(parser.Ident); ok {
-					if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
-						*errs = append(*errs, err)
-					}
-				}
+		// DO NOT DELETE JUST IN CASE
+		// if e.Op == token.ADD {
+		// 	if t1 == types.String || t2 == types.String {
+		// 		// If one side is a string, enforce string type
+		// 		if ident, ok := e.X.(parser.Ident); ok {
+		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
+		// 				*errs = append(*errs, err)
+		// 			}
+		// 		}
+		// 		if ident, ok := e.Y.(parser.Ident); ok {
+		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
+		// 				*errs = append(*errs, err)
+		// 			}
+		// 		}
+		// 		return types.String
+		// 	} else if t1 == types.Number || t2 == types.Number {
+		// 		// If one side is a number, enforce number type
+		// 		if ident, ok := e.X.(parser.Ident); ok {
+		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
+		// 				*errs = append(*errs, err)
+		// 			}
+		// 		}
+		// 		if ident, ok := e.Y.(parser.Ident); ok {
+		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
+		// 				*errs = append(*errs, err)
+		// 			}
+		// 		}
 
-				return types.Number
-			}
-		}
+		// 		return types.Number
+		// 	}
+		// }
 
-		// If neither inference rule applies, both variables remain Any
 		return types.Any
 	}
 

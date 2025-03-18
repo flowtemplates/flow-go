@@ -17,7 +17,7 @@ func (l *Lexer) lexToken(t token.Kind, next stateFn) stateFn {
 	return next
 }
 
-func (l *Lexer) StartsWith(t token.Kind) bool {
+func (l *Lexer) startsWith(t token.Kind) bool {
 	tokString := token.TokenString(t)
 	if tokString != "" {
 		return strings.HasPrefix(l.input[l.pos.Offset:], tokString)
@@ -28,7 +28,7 @@ func (l *Lexer) StartsWith(t token.Kind) bool {
 
 func (l *Lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
 	for _, token := range tokens {
-		if l.StartsWith(token) {
+		if l.startsWith(token) {
 			return l.lexToken(token, nextState)
 		}
 	}
@@ -55,37 +55,37 @@ func lexText(l *Lexer) stateFn {
 		// 	return lexLineWhitespace(lexText)
 		// }
 
-		if l.StartsWith(token.LEXPR) {
+		if l.startsWith(token.LEXPR) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.LEXPR, lexExpr)
 		}
 
-		if l.StartsWith(token.RARR) {
+		if l.startsWith(token.RARR) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.RARR, lexComm)
 		}
 
-		if l.StartsWith(token.LSTMT) {
+		if l.startsWith(token.LSTMT) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.LSTMT, lexStmt)
 		}
 
-		if l.StartsWith(token.LCOMM) {
+		if l.startsWith(token.LCOMM) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.LCOMM, lexComm)
 		}
 
-		if l.StartsWith(token.REXPR) {
+		if l.startsWith(token.REXPR) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.REXPR, lexLineWhitespace(lexText))
 		}
 
-		if l.StartsWith(token.RCOMM) {
+		if l.startsWith(token.RCOMM) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.RCOMM, lexText)
 		}
 
-		if l.StartsWith(token.RSTMT) {
+		if l.startsWith(token.RSTMT) {
 			l.emit(token.TEXT)
 			return l.lexToken(token.RSTMT, lexLineWhitespace(lexText))
 		}
@@ -97,7 +97,8 @@ func lexText(l *Lexer) stateFn {
 // TODO: rename
 func lexRealExpr(nextState stateFn) stateFn {
 	return func(l *Lexer) stateFn {
-		switch r := l.next(); {
+		r := l.next()
+		switch {
 		case r == eof:
 			return nil
 		case r == '\n' || r == '\r':
@@ -105,8 +106,10 @@ func lexRealExpr(nextState stateFn) stateFn {
 			return lexText
 		case unicode.IsSpace(r):
 			return lexLineWhitespace(nextState)
-		case r == '"' || r == '\'':
-			return lexString
+		case r == '\'':
+			return lexSQString
+		case r == '"':
+			return lexDQString
 		case r == token.TokenRune(token.LPAREN):
 			l.back()
 			return l.lexToken(token.LPAREN, nextState)
@@ -125,7 +128,7 @@ func lexRealExpr(nextState stateFn) stateFn {
 }
 
 func lexExpr(l *Lexer) stateFn {
-	if l.StartsWith(token.REXPR) {
+	if l.startsWith(token.REXPR) {
 		return l.lexToken(token.REXPR, lexText)
 	}
 
@@ -146,7 +149,7 @@ func lexExpr(l *Lexer) stateFn {
 func lexComm(l *Lexer) stateFn {
 	// ? try to lex something to do not cause commenting whole thing if there is no closing tag
 	for {
-		if l.StartsWith(token.RCOMM) {
+		if l.startsWith(token.RCOMM) {
 			l.emit(token.COMM_TEXT)
 			return l.lexToken(token.RCOMM, lexText)
 		}
@@ -174,14 +177,30 @@ func lexNum(nextState stateFn) stateFn {
 		return nextState
 	}
 }
-func lexString(l *Lexer) stateFn {
+
+func lexSQString(l *Lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
-		case eof:
+		case eof, '\n', '\r':
 			l.emit(token.NOT_TERMINATED_STR)
 			return lexText
-		case '"', '\'':
+		case token.SQUOTE:
+			l.emit(token.STR)
+			return lexExpr
+		}
+	}
+}
+
+// TODO: refactor
+func lexDQString(l *Lexer) stateFn {
+	for {
+		r := l.next()
+		switch r {
+		case eof, '\n', '\r':
+			l.emit(token.NOT_TERMINATED_STR)
+			return lexText
+		case token.DQUOTE:
 			l.emit(token.STR)
 			return lexExpr
 		}
@@ -222,7 +241,7 @@ func lexLineWhitespace(nextState stateFn) stateFn {
 }
 
 func lexStmt(l *Lexer) stateFn {
-	if l.StartsWith(token.RSTMT) {
+	if l.startsWith(token.RSTMT) {
 		return l.lexToken(token.RSTMT, lexLineWhitespace(lexText))
 	}
 

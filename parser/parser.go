@@ -51,17 +51,6 @@ func (p *Parser) next() token.Token {
 	return p.current
 }
 
-func (p *Parser) back() {
-	p.pos--
-	p.current = p.getCurrent()
-}
-
-func (p *Parser) peek() token.Token {
-	t := p.next()
-	p.back()
-	return t
-}
-
 func (p *Parser) consumeWhitespaces() string {
 	var builder strings.Builder
 	for p.current.Kind == token.WS {
@@ -94,6 +83,17 @@ func (p *Parser) parseNode() Node {
 	case token.LNBR:
 		return p.parseText()
 	case token.WS:
+		if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Kind == token.LSTMT {
+			if (p.pos+2 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.END) ||
+				(p.pos+3 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.WS && p.tokens[p.pos+3].Kind == token.END) {
+				return nil
+			}
+
+			ws := p.current.Val
+			p.next()
+			return p.parseStmt(ws)
+		}
+
 		return p.parseText()
 	case token.LEXPR:
 		return p.parseExprBlock()
@@ -123,11 +123,15 @@ loop:
 		case token.LNBR:
 			res = append(res, p.current.Val)
 		case token.WS:
-			// switch p.peek().Typ {
-			// case token.LSTMT:
-			// 	p.next()
-			// 	return p.parseStmt(p.current.Val)
-			// }
+			// TODO: refactor
+			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Kind == token.LSTMT {
+				if (p.pos+2 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.END) ||
+					(p.pos+3 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.WS && p.tokens[p.pos+3].Kind == token.END) {
+					break loop
+				}
+				break loop
+			}
+
 			res = append(res, p.current.Val)
 		default:
 			break loop
@@ -208,9 +212,26 @@ func (p *Parser) parseTernaryExpr(minPrecedence int) Node {
 	return condition
 }
 
-// parseBinaryExpr parses expressions with operator precedence.
+func (p *Parser) parseUnaryExpr() Node {
+	if p.current.IsOneOfMany(token.NOT, token.EXCL) {
+		op := p.current
+		p.next() // Consume operator
+		p.consumeWhitespaces()
+
+		operand := p.parseUnaryExpr()
+		return &UnaryExpr{
+			Op:    op.Kind,
+			OpPos: op.Pos,
+			X:     operand,
+		}
+	}
+
+	// If no unary operator, fallback to primary
+	return p.parsePrimary()
+}
+
 func (p *Parser) parseBinaryExpr(minPrecedence int) Node {
-	left := p.parsePrimary()
+	left := p.parseUnaryExpr()
 
 	for {
 		opPrecedence, isRightAssoc := getPrecedence(p.current)
@@ -264,7 +285,8 @@ func (p *Parser) parsePrimary() Node {
 
 			val = value.NumberValue(v)
 		case token.STR:
-			val = value.StringValue(p.current.Val)
+			// TODO: check for quotes
+			val = value.StringValue(p.current.Val[1 : len(p.current.Val)-1])
 		}
 
 		lit := Lit{
@@ -292,17 +314,20 @@ func (p *Parser) parsePrimary() Node {
 	}
 }
 
-// getPrecedence returns the precedence and associativity of an operator.
 func getPrecedence(tok token.Token) (int, bool) {
 	if tok.IsComparisonOp() {
 		return 10, false
 	}
 
 	switch tok.Kind {
-	case token.ADD, token.SUB:
-		return 20, false // Left-associative
-	case token.MUL, token.DIV:
-		return 30, false // Left-associative
+	case token.LOR, token.OR:
+		return 10, false
+	case token.AND, token.LAND:
+		return 20, false
+	// case token.ADD, token.SUB:
+	// 	return 20, false // Left-associative
+	// case token.MUL, token.DIV:
+	// 	return 30, false // Left-associative
 	// case token.POW:
 	// 	return 40, true
 	default:
@@ -334,10 +359,10 @@ func (p *Parser) parseIfStmt(preBlockWs string) Node {
 	ifStmt := IfStmt{
 		BegTag: StmtTagWithExpr{
 			StmtTag: StmtTag{
-				PreLStmtWs: preBlockWs,
-				LStmt:      p.tokens[p.pos-1].Pos, // Get position of LSTMT
-				KwPos:      p.current.Pos,
-				Kw:         token.IF,
+				PreWs: preBlockWs,
+				LStmt: p.tokens[p.pos-1].Pos, // Get position of LSTMT
+				KwPos: p.current.Pos,
+				Kw:    token.IF,
 			},
 		},
 	}
@@ -357,13 +382,13 @@ func (p *Parser) parseIfStmt(preBlockWs string) Node {
 
 	ifStmt.Body = p.parseBody()
 
+	ifStmt.PreEndTagWs = p.consumeWhitespaces()
 	// Check for "end" statement
 	if p.current.Kind != token.LSTMT {
 		p.errorf("expected LSTMT for end, got %v", p.current)
 		return ifStmt
 	}
 
-	ifStmt.EndTag.LStmt = p.current.Pos
 	p.next() // Consume LSTMT
 
 	p.consumeWhitespaces()
@@ -380,7 +405,6 @@ func (p *Parser) parseIfStmt(preBlockWs string) Node {
 		p.errorf("expected RSTMT after end, got %v", p.current)
 		return ifStmt
 	}
-	ifStmt.EndTag.RStmt = p.current.Pos
 	p.next() // Consume RSTMT
 
 	p.consumeWhitespaces()
@@ -422,6 +446,7 @@ func (p *Parser) parseBody() []Node {
 			(p.pos+2 < len(p.tokens) && p.tokens[p.pos+1].Kind == token.WS && p.tokens[p.pos+2].Kind == token.END) {
 			break
 		}
+
 		node := p.parseNode()
 		if node == nil {
 			break

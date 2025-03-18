@@ -4,10 +4,11 @@ import (
 	"fmt"
 )
 
+// TODO: write equal function for ast
 type Position struct {
-	Line   int
-	Column int
-	Offset int
+	Line   int `json:"-"`
+	Column int `json:"-"`
+	Offset int `json:"-"`
 }
 
 func (p Position) String() string {

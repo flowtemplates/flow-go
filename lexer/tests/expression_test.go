@@ -21,6 +21,17 @@ func TestExpressions(t *testing.T) {
 			},
 		},
 		{
+			name:  "Multiline plain text",
+			input: "123\n3\n4",
+			expected: []token.Token{
+				{Kind: token.TEXT, Val: "123"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.TEXT, Val: "3"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.TEXT, Val: "4"},
+			},
+		},
+		{
 			name:  "Simple expression",
 			input: "{{name}}",
 			expected: []token.Token{
@@ -262,164 +273,164 @@ func TestNumLiterals(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-func TestOperations(t *testing.T) {
-	testCases := []testCase{
-		{
-			name:  "Addittion",
-			input: "{{seconds+1}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "seconds"},
-				{Kind: token.ADD},
-				{Kind: token.INT, Val: "1"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Subtraction",
-			input: "{{age-123.2}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.SUB},
-				{Kind: token.FLOAT, Val: "123.2"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Negative number subtraction",
-			input: "{{age- -123.2}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.SUB},
-				{Kind: token.WS, Val: " "},
-				{Kind: token.SUB},
-				{Kind: token.FLOAT, Val: "123.2"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Multiply",
-			input: "{{age*30}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.MUL},
-				{Kind: token.INT, Val: "30"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Multiply by negative number",
-			input: "{{age*-30}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.MUL},
-				{Kind: token.SUB},
-				{Kind: token.INT, Val: "30"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Multiply by negative number",
-			input: "{{age*-30}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.MUL},
-				{Kind: token.SUB},
-				{Kind: token.INT, Val: "30"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Division",
-			input: "{{age/30}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.DIV},
-				{Kind: token.INT, Val: "30"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Division by negative number",
-			input: "{{age/-30}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.DIV},
-				{Kind: token.SUB},
-				{Kind: token.INT, Val: "30"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Single parens",
-			input: "{{(12/2)+age}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.LPAREN},
-				{Kind: token.INT, Val: "12"},
-				{Kind: token.DIV},
-				{Kind: token.INT, Val: "2"},
-				{Kind: token.RPAREN},
-				{Kind: token.ADD},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Two operations with parens",
-			input: "{{(age/-30)+(12-2.2)}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.LPAREN},
-				{Kind: token.IDENT, Val: "age"},
-				{Kind: token.DIV},
-				{Kind: token.SUB},
-				{Kind: token.INT, Val: "30"},
-				{Kind: token.RPAREN},
-				{Kind: token.ADD},
-				{Kind: token.LPAREN},
-				{Kind: token.INT, Val: "12"},
-				{Kind: token.SUB},
-				{Kind: token.FLOAT, Val: "2.2"},
-				{Kind: token.RPAREN},
-				{Kind: token.REXPR},
-			},
-		},
-	}
-	runTestCases(t, testCases)
-}
+// func TestOperations(t *testing.T) {
+// 	testCases := []testCase{
+// 		{
+// 			name:  "Addittion",
+// 			input: "{{seconds+1}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "seconds"},
+// 				{Kind: token.ADD},
+// 				{Kind: token.INT, Val: "1"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Subtraction",
+// 			input: "{{age-123.2}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.SUB},
+// 				{Kind: token.FLOAT, Val: "123.2"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Negative number subtraction",
+// 			input: "{{age- -123.2}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.SUB},
+// 				{Kind: token.WS, Val: " "},
+// 				{Kind: token.SUB},
+// 				{Kind: token.FLOAT, Val: "123.2"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Multiply",
+// 			input: "{{age*30}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.MUL},
+// 				{Kind: token.INT, Val: "30"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Multiply by negative number",
+// 			input: "{{age*-30}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.MUL},
+// 				{Kind: token.SUB},
+// 				{Kind: token.INT, Val: "30"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Multiply by negative number",
+// 			input: "{{age*-30}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.MUL},
+// 				{Kind: token.SUB},
+// 				{Kind: token.INT, Val: "30"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Division",
+// 			input: "{{age/30}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.DIV},
+// 				{Kind: token.INT, Val: "30"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Division by negative number",
+// 			input: "{{age/-30}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.DIV},
+// 				{Kind: token.SUB},
+// 				{Kind: token.INT, Val: "30"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Single parens",
+// 			input: "{{(12/2)+age}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.LPAREN},
+// 				{Kind: token.INT, Val: "12"},
+// 				{Kind: token.DIV},
+// 				{Kind: token.INT, Val: "2"},
+// 				{Kind: token.RPAREN},
+// 				{Kind: token.ADD},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Two operations with parens",
+// 			input: "{{(age/-30)+(12-2.2)}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.LPAREN},
+// 				{Kind: token.IDENT, Val: "age"},
+// 				{Kind: token.DIV},
+// 				{Kind: token.SUB},
+// 				{Kind: token.INT, Val: "30"},
+// 				{Kind: token.RPAREN},
+// 				{Kind: token.ADD},
+// 				{Kind: token.LPAREN},
+// 				{Kind: token.INT, Val: "12"},
+// 				{Kind: token.SUB},
+// 				{Kind: token.FLOAT, Val: "2.2"},
+// 				{Kind: token.RPAREN},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 	}
+// 	runTestCases(t, testCases)
+// }
 
-func TestOperationsEdgeCases(t *testing.T) {
-	testCases := []testCase{
-		{
-			name:  "Unclosed addition",
-			input: "{{1+}}",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.INT, Val: "1"},
-				{Kind: token.ADD},
-				{Kind: token.REXPR},
-			},
-		},
-		{
-			name:  "Unclosed expression with addition",
-			input: "{{1+",
-			expected: []token.Token{
-				{Kind: token.LEXPR},
-				{Kind: token.INT, Val: "1"},
-				{Kind: token.ADD},
-			},
-		},
-	}
-	runTestCases(t, testCases)
-}
+// func TestOperationsEdgeCases(t *testing.T) {
+// 	testCases := []testCase{
+// 		{
+// 			name:  "Unclosed addition",
+// 			input: "{{1+}}",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.INT, Val: "1"},
+// 				{Kind: token.ADD},
+// 				{Kind: token.REXPR},
+// 			},
+// 		},
+// 		{
+// 			name:  "Unclosed expression with addition",
+// 			input: "{{1+",
+// 			expected: []token.Token{
+// 				{Kind: token.LEXPR},
+// 				{Kind: token.INT, Val: "1"},
+// 				{Kind: token.ADD},
+// 			},
+// 		},
+// 	}
+// 	runTestCases(t, testCases)
+// }
 
 func TestNumLiteralsEdgeCases(t *testing.T) {
 	testCases := []testCase{
@@ -466,7 +477,7 @@ func TestStringLiterals(t *testing.T) {
 			input: `{{'single'}}`,
 			expected: []token.Token{
 				{Kind: token.LEXPR},
-				{Kind: token.STR, Val: `'single'`},
+				{Kind: token.STR, Val: "'single'"},
 				{Kind: token.REXPR},
 			},
 		},
@@ -802,6 +813,21 @@ func TestOperators(t *testing.T) {
 				{Kind: token.REXPR},
 			},
 		},
+		{
+			name:  "Logical expression with parens",
+			input: "{{(var||1)&&false}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.LPAREN},
+				{Kind: token.IDENT, Val: "var"},
+				{Kind: token.LOR},
+				{Kind: token.INT, Val: "1"},
+				{Kind: token.RPAREN},
+				{Kind: token.LAND},
+				{Kind: token.IDENT, Val: "false"},
+				{Kind: token.REXPR},
+			},
+		},
 	}
 	runTestCases(t, testCases)
 }
@@ -823,7 +849,7 @@ func TestTernaryOps(t *testing.T) {
 		},
 		{
 			name:  "Ternary with whitespaces",
-			input: `{{ flag ? "a" : "b" }}`,
+			input: `{{ flag ? a : b }}`,
 			expected: []token.Token{
 				{Kind: token.LEXPR},
 				{Kind: token.WS, Val: " "},
@@ -831,11 +857,11 @@ func TestTernaryOps(t *testing.T) {
 				{Kind: token.WS, Val: " "},
 				{Kind: token.QUESTION},
 				{Kind: token.WS, Val: " "},
-				{Kind: token.STR, Val: `"a"`},
+				{Kind: token.IDENT, Val: "a"},
 				{Kind: token.WS, Val: " "},
 				{Kind: token.COLON},
 				{Kind: token.WS, Val: " "},
-				{Kind: token.STR, Val: `"b"`},
+				{Kind: token.IDENT, Val: "b"},
 				{Kind: token.WS, Val: " "},
 				{Kind: token.REXPR},
 			},

@@ -20,16 +20,16 @@ func RenderAst(ast []parser.Node, scope Scope) (string, error) {
 
 	context := scopeToContext(scope)
 
-	return render(ast, context)
+	return render(ast, "", context)
 }
 
-func render(ast []parser.Node, context Context) (string, error) {
+func render(ast []parser.Node, indent string, context Context) (string, error) {
 	var result strings.Builder
 	for _, node := range ast {
 		switch n := node.(type) {
 		case parser.Text:
 			for _, s := range n.Val {
-				result.WriteString(s)
+				result.WriteString(strings.TrimPrefix(s, indent))
 			}
 		case parser.ExprBlock:
 			s, err := exprToValue(n.Body, context)
@@ -44,15 +44,16 @@ func render(ast []parser.Node, context Context) (string, error) {
 				return "", err
 			}
 
+			indent += n.BegTag.PreWs
 			if conditionValue.Boolean() {
-				bodyContent, err := render(n.Body, context)
+				bodyContent, err := render(n.Body, indent, context)
 				if err != nil {
 					return "", err
 				}
 
 				result.WriteString(bodyContent)
 			} else if n.Else != nil {
-				elseContent, err := render(n.Else, context)
+				elseContent, err := render(n.Else, indent, context)
 				if err != nil {
 					return "", err
 				}

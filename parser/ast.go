@@ -27,6 +27,12 @@ type (
 		Name string
 	}
 
+	UnaryExpr struct {
+		Op    token.Kind
+		OpPos token.Position
+		X     Expr
+	}
+
 	BinaryExpr struct {
 		X     Expr
 		Op    token.Kind
@@ -45,11 +51,11 @@ type (
 	}
 
 	StmtTag struct {
-		PreLStmtWs string
-		LStmt      token.Position
-		Kw         token.Kind
-		KwPos      token.Position
-		RStmt      token.Position
+		PreWs string
+		LStmt token.Position
+		Kw    token.Kind
+		KwPos token.Position
+		RStmt token.Position
 	}
 
 	StmtTagWithExpr struct {
@@ -64,9 +70,9 @@ type (
 	}
 
 	IfStmt struct {
-		BegTag StmtTagWithExpr
-		Body   []Node
-		Else   []Node
-		EndTag StmtTag
+		BegTag      StmtTagWithExpr
+		Body        []Node
+		Else        []Node
+		PreEndTagWs string
 	}
 )

@@ -64,7 +64,7 @@ func TestPosition(t *testing.T) {
 		},
 		{
 			name:  "Multiple expressions on many lines",
-			input: "Hello {{name}}!\nFrom {{ flow }}templates\n\n{{1 + 3}}",
+			input: "Hello {{name}}!\nFrom {{ flow }}templates\n\n{{3}}",
 			expected: []token.Token{
 				{Kind: token.TEXT, Val: "Hello ", Pos: token.Position{
 					Line:   1,
@@ -146,35 +146,15 @@ func TestPosition(t *testing.T) {
 					Column: 1,
 					Offset: 42,
 				}},
-				{Kind: token.INT, Val: "1", Pos: token.Position{
+				{Kind: token.INT, Val: "3", Pos: token.Position{
 					Line:   4,
 					Column: 3,
 					Offset: 44,
 				}},
-				{Kind: token.WS, Pos: token.Position{
+				{Kind: token.REXPR, Pos: token.Position{
 					Line:   4,
 					Column: 4,
 					Offset: 45,
-				}},
-				{Kind: token.ADD, Pos: token.Position{
-					Line:   4,
-					Column: 5,
-					Offset: 46,
-				}},
-				{Kind: token.WS, Pos: token.Position{
-					Line:   4,
-					Column: 6,
-					Offset: 47,
-				}},
-				{Kind: token.INT, Val: "1", Pos: token.Position{
-					Line:   4,
-					Column: 7,
-					Offset: 48,
-				}},
-				{Kind: token.REXPR, Pos: token.Position{
-					Line:   4,
-					Column: 8,
-					Offset: 49,
 				}},
 			},
 		},

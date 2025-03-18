@@ -48,18 +48,18 @@ const (
 	GTR  // >
 	comparison_op_end
 
-	ASSIGN     // =
-	ADD_ASSIGN // +=
-	SUB_ASSIGN // -=
-	MUL_ASSIGN // *=
-	QUO_ASSIGN // /=
-	REM_ASSIGN // %=
+	// ASSIGN     // =
+	// ADD_ASSIGN // +=
+	// SUB_ASSIGN // -=
+	// MUL_ASSIGN // *=
+	// QUO_ASSIGN // /=
+	// REM_ASSIGN // %=
 
-	ADD // +
 	SUB // -
-	MUL // *
-	DIV // /
-	MOD // %
+	// ADD // +
+	// MUL // *
+	// DIV // /
+	// MOD // %
 
 	QUESTION // ?
 	COLON    // :
@@ -123,18 +123,18 @@ var tokens = []string{
 	QUESTION: "?",
 	COLON:    ":",
 
-	ADD: "+",
 	SUB: "-",
-	MUL: "*",
-	DIV: "/",
-	MOD: "%",
+	// ADD: "+",
+	// MUL: "*",
+	// DIV: "/",
+	// MOD: "%",
 
-	ASSIGN:     "=",
-	ADD_ASSIGN: "+=",
-	SUB_ASSIGN: "-=",
-	MUL_ASSIGN: "*=",
-	QUO_ASSIGN: "/=",
-	REM_ASSIGN: "%=",
+	// ASSIGN:     "=",
+	// ADD_ASSIGN: "+=",
+	// SUB_ASSIGN: "-=",
+	// MUL_ASSIGN: "*=",
+	// QUO_ASSIGN: "/=",
+	// REM_ASSIGN: "%=",
 
 	EQL:  "==",
 	LESS: "<",
@@ -181,6 +181,11 @@ var tokens = []string{
 	NOT:     "not",
 	DO:      "do",
 }
+
+const (
+	SQUOTE rune = '\''
+	DQUOTE rune = '"'
+)
 
 func TokenString(k Kind) string {
 	return tokens[k]
@@ -239,7 +244,8 @@ func GetKeywords() []Kind {
 	return res
 }
 func (t Token) IsComparisonOp() bool {
-	return comparison_op_beg < t.Kind && t.Kind < comparison_op_end
+	return (comparison_op_beg < t.Kind && t.Kind < comparison_op_end) ||
+		t.Kind == IS
 }
 
 func IsNotOp(r rune) bool {

@@ -34,7 +34,7 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 		}
 
 		return value, nil
-	case parser.TernaryExpr:
+	case *parser.TernaryExpr:
 		conditionValue, err := exprToValue(n.Condition, context)
 		if err != nil {
 			return nil, err
@@ -56,7 +56,7 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 
 	case parser.Lit:
 		return n.Value, nil
-	case parser.BinaryExpr:
+	case *parser.BinaryExpr:
 		x, err := exprToValue(n.X, context)
 		if err != nil {
 			return nil, err
@@ -68,10 +68,8 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 		}
 
 		switch n.Op {
-		case token.ADD:
-			return x.Add(y), nil
-		case token.SUB:
-			return x.Add(y), nil
+		// case token.ADD:
+		// 	return x.Add(y), nil
 		case token.EQL:
 			return value.BooleanValue(x.String() == y.String()), nil
 		default:
