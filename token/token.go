@@ -37,12 +37,11 @@ const (
 	// Operators and delimiters
 	RARR // ->
 
-	comparison_op_beg
 	LAND // &&
 	LOR  // ||
+	comparison_op_beg
 	EQL  // ==
 	NEQL // !=
-	EXCL // !
 	LEQ  // <=
 	GEQ  // >=
 	LESS // <
@@ -64,6 +63,7 @@ const (
 
 	QUESTION // ?
 	COLON    // :
+	EXCL     // !
 
 	LEXPR // {{
 	REXPR // }}

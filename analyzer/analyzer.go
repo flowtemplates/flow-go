@@ -41,14 +41,7 @@ func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Typ
 
 		return types.Any
 	case parser.Lit:
-		switch e.Typ {
-		case token.INT, token.FLOAT:
-			return types.Number
-		case token.STR:
-			return types.String
-		default:
-			return types.Any
-		}
+		return e.Value.Type()
 	case parser.TernaryExpr:
 		parseExpressionTypes(e.Condition, tm, errs)
 		parseExpressionTypes(e.TrueExpr, tm, errs)

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 type Node interface{} // nolint: iface
@@ -17,9 +18,8 @@ type (
 	}
 
 	Lit struct {
-		Pos token.Position
-		Typ token.Kind
-		Val string
+		Pos   token.Position
+		Value value.Valueable
 	}
 
 	Ident struct {

@@ -7,6 +7,7 @@ import (
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/token"
 	"github.com/flowtemplates/flow-go/types"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 func TestGetTypeMap(t *testing.T) {
@@ -46,8 +47,7 @@ func TestGetTypeMap(t *testing.T) {
 						},
 						Op: token.ADD,
 						Y: parser.Lit{
-							Val: "123",
-							Typ: token.INT,
+							Value: value.NumberValue(123),
 						},
 					},
 				},
@@ -64,8 +64,7 @@ func TestGetTypeMap(t *testing.T) {
 				parser.ExprBlock{
 					Body: parser.BinaryExpr{
 						X: parser.Lit{
-							Val: "123",
-							Typ: token.INT,
+							Value: value.NumberValue(123),
 						},
 						Op: token.ADD,
 						Y: parser.Ident{
@@ -112,8 +111,7 @@ func TestGetTypeMap(t *testing.T) {
 						},
 						Op: token.ADD,
 						Y: parser.Lit{
-							Val: "'ish'",
-							Typ: token.STR,
+							Value: value.StringValue("ish"),
 						},
 					},
 				},

@@ -20,7 +20,6 @@ func RenderAst(ast []parser.Node, scope Scope) (string, error) {
 
 	context := scopeToContext(scope)
 
-	// fmt.Printf("context: %v, scope: %v\n", context, scope)
 	return render(ast, context)
 }
 

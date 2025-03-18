@@ -2,9 +2,11 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 type Parser struct {
@@ -250,11 +252,24 @@ func (p *Parser) parsePrimary() Node {
 		p.next()
 		p.consumeWhitespaces()
 		return ident
-	case token.INT, token.FLOAT:
+	case token.INT, token.FLOAT, token.STR:
+		var val value.Valueable
+		switch p.current.Kind {
+		case token.INT, token.FLOAT:
+			v, err := strconv.ParseFloat(p.current.Val, 64)
+			if err != nil {
+				p.errorf("%s", err.Error())
+				return nil
+			}
+
+			val = value.NumberValue(v)
+		case token.STR:
+			val = value.StringValue(p.current.Val)
+		}
+
 		lit := Lit{
-			Pos: p.current.Pos,
-			Val: p.current.Val,
-			Typ: p.current.Kind,
+			Pos:   p.current.Pos,
+			Value: val,
 		}
 
 		p.next()

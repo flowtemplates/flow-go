@@ -5,6 +5,7 @@ import (
 
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 func TestIfStatements(t *testing.T) {
@@ -286,8 +287,7 @@ func TestGenIfStatements(t *testing.T) {
 						},
 						Op: token.EQL,
 						Y: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -318,8 +318,7 @@ func TestGenIfStatements(t *testing.T) {
 						},
 						Op: token.GTR,
 						Y: parser.Lit{
-							Typ: token.INT,
-							Val: "3",
+							Value: value.NumberValue(3),
 						},
 					},
 				},

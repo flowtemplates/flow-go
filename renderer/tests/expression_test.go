@@ -6,6 +6,7 @@ import (
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/renderer"
 	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 func TestExpressions(t *testing.T) {
@@ -29,8 +30,7 @@ func TestExpressions(t *testing.T) {
 			input: []parser.Node{
 				parser.ExprBlock{
 					Body: parser.Lit{
-						Typ: token.INT,
-						Val: "1",
+						Value: value.NumberValue(1),
 					},
 				},
 			},
@@ -44,8 +44,7 @@ func TestExpressions(t *testing.T) {
 			input: []parser.Node{
 				parser.ExprBlock{
 					Body: parser.Lit{
-						Typ: token.FLOAT,
-						Val: "1.1",
+						Value: value.NumberValue(1.1),
 					},
 				},
 			},
@@ -73,14 +72,53 @@ func TestExpressions(t *testing.T) {
 			input: []parser.Node{
 				parser.ExprBlock{
 					Body: parser.Lit{
-						Typ: token.STR,
-						Val: "word",
+						Value: value.StringValue("word"),
 					},
 				},
 			},
 			scope:       renderer.Scope{},
 			errExpected: false,
 		},
+		{
+			name:     "Addition",
+			str:      "{{123+2}}",
+			expected: "125",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.BinaryExpr{
+						X: parser.Lit{
+							Value: value.NumberValue(123),
+						},
+						Op: token.ADD,
+						Y: parser.Lit{
+							Value: value.NumberValue(2),
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		// {
+		// 	name:     "Subtraction",
+		// 	str:      "{{123-10}}",
+		// 	expected: "113",
+		// 	input: []parser.Node{
+		// 		parser.ExprBlock{
+		// 			Body: parser.BinaryExpr{
+		// 				X: parser.Lit{
+		// 					Value: value.NumberValue(123),
+		// 				},
+		// 				Op: token.SUB,
+		// 				Y: parser.Lit{
+		// 					Value: value.NumberValue(10),
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// 	scope:       renderer.Scope{},
+		// 	errExpected: false,
+		// },
 		{
 			name:     "Expression with string var",
 			str:      "{{name}}",
@@ -140,13 +178,11 @@ func TestTernaryExpressions(t *testing.T) {
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -166,13 +202,11 @@ func TestTernaryExpressions(t *testing.T) {
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -195,13 +229,11 @@ func TestTernaryExpressions(t *testing.T) {
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -224,13 +256,11 @@ func TestTernaryExpressions(t *testing.T) {
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -252,13 +282,11 @@ func TestTernaryExpressions(t *testing.T) {
 						},
 						Do: token.DO,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.ELSE,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -276,18 +304,15 @@ func TestTernaryExpressions(t *testing.T) {
 				parser.ExprBlock{
 					Body: parser.TernaryExpr{
 						Condition: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -303,18 +328,15 @@ func TestTernaryExpressions(t *testing.T) {
 				parser.ExprBlock{
 					Body: parser.TernaryExpr{
 						Condition: parser.Lit{
-							Typ: token.INT,
-							Val: "0",
+							Value: value.NumberValue(0),
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -330,18 +352,15 @@ func TestTernaryExpressions(t *testing.T) {
 				parser.ExprBlock{
 					Body: parser.TernaryExpr{
 						Condition: parser.Lit{
-							Typ: token.STR,
-							Val: "a",
+							Value: value.StringValue("a"),
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -357,18 +376,15 @@ func TestTernaryExpressions(t *testing.T) {
 				parser.ExprBlock{
 					Body: parser.TernaryExpr{
 						Condition: parser.Lit{
-							Typ: token.STR,
-							Val: "",
+							Value: value.StringValue(""),
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "1",
+							Value: value.NumberValue(1),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.INT,
-							Val: "2",
+							Value: value.NumberValue(2),
 						},
 					},
 				},
@@ -418,25 +434,21 @@ func TestTernaryExpressions(t *testing.T) {
 								},
 								Op: token.ADD,
 								Y: parser.Lit{
-									Typ: token.INT,
-									Val: "1",
+									Value: value.NumberValue(1),
 								},
 							},
 							Op: token.EQL,
 							Y: parser.Lit{
-								Typ: token.INT,
-								Val: "3",
+								Value: value.NumberValue(3),
 							},
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.STR,
-							Val: "foo",
+							Value: value.StringValue("foo"),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.STR,
-							Val: "bar",
+							Value: value.StringValue("bar"),
 						},
 					},
 				},
@@ -460,25 +472,21 @@ func TestTernaryExpressions(t *testing.T) {
 								},
 								Op: token.ADD,
 								Y: parser.Lit{
-									Typ: token.INT,
-									Val: "1",
+									Value: value.NumberValue(1),
 								},
 							},
 							Op: token.EQL,
 							Y: parser.Lit{
-								Typ: token.INT,
-								Val: "3",
+								Value: value.NumberValue(3),
 							},
 						},
 						Do: token.QUESTION,
 						TrueExpr: parser.Lit{
-							Typ: token.STR,
-							Val: "foo",
+							Value: value.StringValue("foo"),
 						},
 						Else: token.COLON,
 						FalseExpr: parser.Lit{
-							Typ: token.STR,
-							Val: "bar",
+							Value: value.StringValue("bar"),
 						},
 					},
 				},

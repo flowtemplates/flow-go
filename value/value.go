@@ -1,9 +1,11 @@
-package renderer
+package value
 
 import (
 	"fmt"
 	"math"
 	"strconv"
+
+	"github.com/flowtemplates/flow-go/types"
 )
 
 type Valueable interface {
@@ -11,9 +13,10 @@ type Valueable interface {
 	Boolean() bool
 	Number() float64
 	Add(Valueable) Valueable
+	Type() types.Type
 }
 
-func ValueFromAny(value any) Valueable {
+func FromAny(value any) Valueable {
 	switch v := value.(type) {
 	case string:
 		return StringValue(v)
@@ -55,6 +58,10 @@ func (v StringValue) Add(b Valueable) Valueable {
 	return StringValue(string(v) + b.String())
 }
 
+func (v StringValue) Type() types.Type {
+	return types.String
+}
+
 type BooleanValue bool
 
 func (v BooleanValue) String() string {
@@ -80,6 +87,10 @@ func (v BooleanValue) Add(b Valueable) Valueable {
 	default:
 		return StringValue(v.String() + b.String())
 	}
+}
+
+func (v BooleanValue) Type() types.Type {
+	return types.Boolean
 }
 
 type NumberValue float64
@@ -108,4 +119,8 @@ func (v NumberValue) Add(b Valueable) Valueable {
 	default:
 		return StringValue(v.String() + b.String())
 	}
+}
+
+func (v NumberValue) Type() types.Type {
+	return types.Number
 }

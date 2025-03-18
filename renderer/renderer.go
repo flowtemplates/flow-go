@@ -3,29 +3,29 @@ package renderer
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 type Scope map[string]any
 
-type Context map[string]Valueable
+type Context map[string]value.Valueable
 
 func scopeToContext(scope Scope) Context {
 	context := make(Context)
-	for name, value := range scope {
-		context[name] = ValueFromAny(value)
+	for name, val := range scope {
+		context[name] = value.FromAny(val)
 	}
 
-	context["true"] = BooleanValue(true)
-	context["false"] = BooleanValue(false)
+	context["true"] = value.BooleanValue(true)
+	context["false"] = value.BooleanValue(false)
 
 	return context
 }
 
-func exprToValue(expr parser.Expr, context Context) (Valueable, error) {
+func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 	switch n := expr.(type) {
 	case parser.Ident:
 		value, exists := context[n.Name]
@@ -55,21 +55,7 @@ func exprToValue(expr parser.Expr, context Context) (Valueable, error) {
 		return value, nil
 
 	case parser.Lit:
-		switch n.Typ {
-		case token.STR:
-			return StringValue(n.Val), nil
-		case token.INT, token.FLOAT:
-			// TODO:
-			num, err := strconv.ParseFloat(n.Val, 64)
-			if err != nil {
-				return nil, err
-			}
-
-			return NumberValue(num), nil
-		default:
-			return nil, nil
-		}
-
+		return n.Value, nil
 	case parser.BinaryExpr:
 		x, err := exprToValue(n.X, context)
 		if err != nil {
@@ -84,8 +70,10 @@ func exprToValue(expr parser.Expr, context Context) (Valueable, error) {
 		switch n.Op {
 		case token.ADD:
 			return x.Add(y), nil
+		case token.SUB:
+			return x.Add(y), nil
 		case token.EQL:
-			return BooleanValue(x.String() == y.String()), nil
+			return value.BooleanValue(x.String() == y.String()), nil
 		default:
 			return nil, errors.New("unknown operator in binary expression")
 		}
