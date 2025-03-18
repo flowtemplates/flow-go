@@ -28,14 +28,18 @@ func addToTypeMap(v Symbol, tm TypeMap) error {
 func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Type {
 	switch e := expr.(type) {
 	case parser.Ident:
+		if e.Name == "true" || e.Name == "false" {
+			return types.Boolean
+		}
+
 		if err := addToTypeMap(Symbol{
 			Name: e.Name,
 			Typ:  types.Any,
 		}, tm); err != nil {
 			*errs = append(*errs, err)
 		}
-		return types.Any
 
+		return types.Any
 	case parser.Lit:
 		switch e.Typ {
 		case token.INT, token.FLOAT:
@@ -45,6 +49,10 @@ func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Typ
 		default:
 			return types.Any
 		}
+	case parser.TernaryExpr:
+		parseExpressionTypes(e.Condition, tm, errs)
+		parseExpressionTypes(e.TrueExpr, tm, errs)
+		parseExpressionTypes(e.FalseExpr, tm, errs)
 	case parser.BinaryExpr:
 		t1 := parseExpressionTypes(e.X, tm, errs)
 		t2 := parseExpressionTypes(e.Y, tm, errs)

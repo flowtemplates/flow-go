@@ -1,97 +1,96 @@
 package renderer
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/flowtemplates/flow-go/analyzer"
 	"github.com/flowtemplates/flow-go/parser"
-	"github.com/flowtemplates/flow-go/types"
+	"github.com/flowtemplates/flow-go/token"
 )
 
-type Scope map[string]string
+type Scope map[string]any
 
-type Context map[string]TypedValue
+type Context map[string]Valueable
 
-type TypedValue struct {
-	Typ types.Type
-	Val any
-}
-
-func (s TypedValue) String() string {
-	switch s.Typ {
-	case types.Boolean:
-		return ""
-	case types.Number:
-		return fmt.Sprintf("%d", s.Val)
-	default:
-		return fmt.Sprintf("%s", s.Val)
-	}
-}
-
-func (s TypedValue) Boolean() bool {
-	switch s.Typ {
-	case types.Boolean:
-		return s.Val.(bool)
-	case types.Number:
-		return s.Val.(float64) != 0
-	case types.String:
-		return s.Val.(string) != ""
-	default:
-		return true
-	}
-}
-
-func scopeToContext(scope Scope, tm analyzer.TypeMap) Context {
+func scopeToContext(scope Scope) Context {
 	context := make(Context)
 	for name, value := range scope {
-		typeInfo, exists := tm[name]
-		if !exists {
-			continue // Skip unknown types
-		}
-
-		var typedValue any
-		switch typeInfo {
-		case types.Number:
-			if v, err := strconv.ParseFloat(value, 64); err == nil {
-				typedValue = v
-			} else {
-				typedValue = 0.0 // Default if conversion fails
-			}
-		case types.Boolean:
-			typedValue = value == "true"
-		default:
-			typedValue = value // Treat as string or unknown type
-		}
-
-		context[name] = TypedValue{
-			Typ: typeInfo,
-			Val: typedValue,
-		}
+		context[name] = ValueFromAny(value)
 	}
 
-	context["true"] = TypedValue{
-		Typ: types.Boolean,
-		Val: true,
-	}
-	context["false"] = TypedValue{
-		Typ: types.Boolean,
-		Val: false,
-	}
+	context["true"] = BooleanValue(true)
+	context["false"] = BooleanValue(false)
 
 	return context
 }
 
-func exprToValue(cond parser.Expr, context Context) (TypedValue, error) {
-	switch n := cond.(type) {
+func exprToValue(expr parser.Expr, context Context) (Valueable, error) {
+	switch n := expr.(type) {
 	case parser.Ident:
 		value, exists := context[n.Name]
 		if !exists {
-			return TypedValue{}, fmt.Errorf("%s not declared", n.Name)
+			return nil, fmt.Errorf("%s not declared", n.Name)
 		}
 
 		return value, nil
+	case parser.TernaryExpr:
+		conditionValue, err := exprToValue(n.Condition, context)
+		if err != nil {
+			return nil, err
+		}
+
+		var exp parser.Expr
+		if conditionValue.Boolean() {
+			exp = n.TrueExpr
+		} else {
+			exp = n.FalseExpr
+		}
+
+		value, err := exprToValue(exp, context)
+		if err != nil {
+			return nil, err
+		}
+
+		return value, nil
+
+	case parser.Lit:
+		switch n.Typ {
+		case token.STR:
+			return StringValue(n.Val), nil
+		case token.INT, token.FLOAT:
+			// TODO:
+			num, err := strconv.ParseFloat(n.Val, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			return NumberValue(num), nil
+		default:
+			return nil, nil
+		}
+
+	case parser.BinaryExpr:
+		x, err := exprToValue(n.X, context)
+		if err != nil {
+			return nil, err
+		}
+
+		y, err := exprToValue(n.Y, context)
+		if err != nil {
+			return nil, err
+		}
+
+		switch n.Op {
+		case token.ADD:
+			return x.Add(y), nil
+		case token.EQL:
+			return BooleanValue(x.String() == y.String()), nil
+		default:
+			return nil, errors.New("unknown operator in binary expression")
+		}
+
 	default:
-		return TypedValue{}, fmt.Errorf("unsupported condition type: %T", cond)
+		return nil, fmt.Errorf("unsupported condition type: %T", expr)
 	}
 }

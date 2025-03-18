@@ -37,19 +37,6 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 	for _, node := range ast {
 		switch n := node.(type) {
 		case parser.ExprBlock:
-			switch e := n.Body.(type) {
-			case parser.Ident:
-				if e.Name == "true" || e.Name == "false" {
-					continue
-				}
-
-				if err := addToTypeMap(Symbol{
-					Name: e.Name,
-					Typ:  types.String,
-				}, tm); err != nil {
-					errs = append(errs, err)
-				}
-			}
 			parseExpressionTypes(n.Body, tm, &errs)
 		case parser.IfStmt:
 			switch e := n.BegTag.Body.(type) {

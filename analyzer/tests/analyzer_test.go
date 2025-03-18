@@ -31,7 +31,7 @@ func TestGetTypeMap(t *testing.T) {
 				},
 			},
 			expected: analyzer.TypeMap{
-				"name": types.String,
+				"name": types.Any,
 			},
 			errExpected: false,
 		},

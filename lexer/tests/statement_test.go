@@ -381,7 +381,8 @@ func TestSwitchStatement(t *testing.T) {
 				{Kind: token.END},
 				{Kind: token.RSTMT},
 			},
-		}}
+		},
+	}
 	runTestCases(t, testCases)
 }
 
@@ -392,6 +393,13 @@ func TestStatementEdgeCases(t *testing.T) {
 			input: "{%",
 			expected: []token.Token{
 				{Kind: token.LSTMT},
+			},
+		},
+		{
+			name:  "Separe statement open",
+			input: "{ %",
+			expected: []token.Token{
+				{Kind: token.TEXT, Val: "{ %"},
 			},
 		},
 		{

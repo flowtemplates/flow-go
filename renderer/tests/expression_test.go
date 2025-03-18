@@ -19,7 +19,7 @@ func TestExpressions(t *testing.T) {
 					Val: []string{"Hello world"},
 				},
 			},
-			context:     renderer.Scope{},
+			scope:       renderer.Scope{},
 			errExpected: false,
 		},
 		{
@@ -34,7 +34,7 @@ func TestExpressions(t *testing.T) {
 					},
 				},
 			},
-			context:     renderer.Scope{},
+			scope:       renderer.Scope{},
 			errExpected: false,
 		},
 		{
@@ -49,7 +49,7 @@ func TestExpressions(t *testing.T) {
 					},
 				},
 			},
-			context:     renderer.Scope{},
+			scope:       renderer.Scope{},
 			errExpected: false,
 		},
 		{
@@ -63,7 +63,7 @@ func TestExpressions(t *testing.T) {
 					},
 				},
 			},
-			context:     renderer.Scope{},
+			scope:       renderer.Scope{},
 			errExpected: false,
 		},
 		{
@@ -78,7 +78,7 @@ func TestExpressions(t *testing.T) {
 					},
 				},
 			},
-			context:     renderer.Scope{},
+			scope:       renderer.Scope{},
 			errExpected: false,
 		},
 		{
@@ -90,7 +90,7 @@ func TestExpressions(t *testing.T) {
 					Body: parser.Ident{Name: "name"},
 				},
 			},
-			context: renderer.Scope{
+			scope: renderer.Scope{
 				"name": "useuse",
 			},
 			errExpected: false,
@@ -116,7 +116,7 @@ func TestExpressions(t *testing.T) {
 					Val: []string{" templates"},
 				},
 			},
-			context: renderer.Scope{
+			scope: renderer.Scope{
 				"name": "world",
 				"flow": "flow",
 			},
@@ -126,20 +126,368 @@ func TestExpressions(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-// func TestTernaryExpressions(t *testing.T) {
-// 	testCases := []testCase{
-// 		{
-// 			name:     "Simple ternary",
-// 			str:      "{{true:1:2}}",
-// 			expected: "1",
-// 			input: []parser.Node{
-// 				parser.ExprBlock{
-// 					Body: parser.Ident{Name: "name"},
-// 				},
-// 			},
-// 			context:     renderer.Scope{},
-// 			errExpected: false,
-// 		},
-// 	}
-// 	runTestCases(t, testCases)
-// }
+func TestTernaryExpressions(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:     "Simple ternary with true",
+			str:      "{{true?1:2}}",
+			expected: "1",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Ident{
+							Name: "true",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Simple ternary with false",
+			str:      "{{false?1:2}}",
+			expected: "2",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Ident{
+							Name: "false",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Simple ternary with true and some text around",
+			str:      "arr[{{false?1:2}}]",
+			expected: "arr[2]",
+			input: []parser.Node{
+				parser.Text{
+					Val: []string{"arr["},
+				},
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Ident{
+							Name: "false",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+				parser.Text{
+					Val: []string{"]"},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Simple ternary",
+			str:      "{{flag?1:2}}",
+			expected: "1",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Ident{
+							Name: "flag",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope: renderer.Scope{
+				"flag": true,
+			},
+			errExpected: false,
+		},
+		{
+			name:     "Do-else ternary",
+			str:      "{{flag do 1 else 2}}",
+			expected: "1",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Ident{
+							Name: "flag",
+						},
+						Do: token.DO,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.ELSE,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope: renderer.Scope{
+				"flag": true,
+			},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with truthy number condition",
+			str:      "{{1?1:2}}",
+			expected: "1",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with falsy number condition",
+			str:      "{{0?1:2}}",
+			expected: "2",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Lit{
+							Typ: token.INT,
+							Val: "0",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with truthy string condition",
+			str:      `{{"a"?1:2}}`,
+			expected: "1",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Lit{
+							Typ: token.STR,
+							Val: "a",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with falsy string condition",
+			str:      `{{""?1:2}}`,
+			expected: "2",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Lit{
+							Typ: token.STR,
+							Val: "",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "1",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.INT,
+							Val: "2",
+						},
+					},
+				},
+			},
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with 3 vars",
+			str:      "{{flag?a:b}}",
+			expected: "foo",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.Ident{
+							Name: "flag",
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Ident{
+							Name: "a",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Ident{
+							Name: "b",
+						},
+					},
+				},
+			},
+			scope: renderer.Scope{
+				"flag": true,
+				"a":    "foo",
+				"b":    "bar",
+			},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with truthy equal",
+			str:      `{{flag + 1==3?"foo":"bar"}}`,
+			expected: "foo",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.BinaryExpr{
+							X: parser.BinaryExpr{
+								X: parser.Ident{
+									Name: "flag",
+								},
+								Op: token.ADD,
+								Y: parser.Lit{
+									Typ: token.INT,
+									Val: "1",
+								},
+							},
+							Op: token.EQL,
+							Y: parser.Lit{
+								Typ: token.INT,
+								Val: "3",
+							},
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.STR,
+							Val: "foo",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.STR,
+							Val: "bar",
+						},
+					},
+				},
+			},
+			scope: renderer.Scope{
+				"flag": 2,
+			},
+			errExpected: false,
+		},
+		{
+			name:     "Ternary with falsy equal",
+			str:      `{{flag+1==3?"foo":"bar"}}`,
+			expected: "bar",
+			input: []parser.Node{
+				parser.ExprBlock{
+					Body: parser.TernaryExpr{
+						Condition: parser.BinaryExpr{
+							X: parser.BinaryExpr{
+								X: parser.Ident{
+									Name: "flag",
+								},
+								Op: token.ADD,
+								Y: parser.Lit{
+									Typ: token.INT,
+									Val: "1",
+								},
+							},
+							Op: token.EQL,
+							Y: parser.Lit{
+								Typ: token.INT,
+								Val: "3",
+							},
+						},
+						Do: token.QUESTION,
+						TrueExpr: parser.Lit{
+							Typ: token.STR,
+							Val: "foo",
+						},
+						Else: token.COLON,
+						FalseExpr: parser.Lit{
+							Typ: token.STR,
+							Val: "bar",
+						},
+					},
+				},
+			},
+			scope: renderer.Scope{
+				"flag": 20,
+			},
+			errExpected: false,
+		},
+	}
+	runTestCases(t, testCases)
+}

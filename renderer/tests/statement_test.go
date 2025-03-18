@@ -28,8 +28,8 @@ func TestIfStatements(t *testing.T) {
 					Else: nil,
 				},
 			},
-			context: renderer.Scope{
-				"var": "true",
+			scope: renderer.Scope{
+				"var": true,
 			},
 			errExpected: false,
 		},
@@ -52,8 +52,8 @@ func TestIfStatements(t *testing.T) {
 					Else: nil,
 				},
 			},
-			context: renderer.Scope{
-				"var": "false",
+			scope: renderer.Scope{
+				"var": false,
 			},
 			errExpected: false,
 		},
