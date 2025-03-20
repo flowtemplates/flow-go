@@ -269,6 +269,36 @@ func TestExpressions(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
+func TestExpressionsEdgeCases(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:     "Empty expression block",
+			input:    "{{}}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		{
+			name:     "Whitespaces inside expression block",
+			input:    "{{ \t }}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		// {
+		// 	name:     "Unterminated expression",
+		// 	input:    "{{",
+		// 	expected: []parser.Node{},
+		// 	errExpected: parser.ExpectedTokenError{
+		// 		Tokens: []token.Kind{token.REXPR},
+		// 	},
+		// },
+	}
+	runTestCases(t, testCases)
+}
+
 func TestOperators(t *testing.T) {
 	testCases := []testCase{
 		{
@@ -331,12 +361,9 @@ func TestOperators(t *testing.T) {
 						X: parser.Ident{
 							Name: "a",
 						},
-						Op: token.IS,
-						Y: parser.UnaryExpr{
-							Op: token.NOT,
-							X: parser.Ident{
-								Name: "b",
-							},
+						Op: token.ISNOT,
+						Y: parser.Ident{
+							Name: "b",
 						},
 					},
 				},

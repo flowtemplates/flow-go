@@ -182,3 +182,65 @@ func TestGenIfStatements(t *testing.T) {
 	}
 	runTestCases(t, testCases)
 }
+
+// func TestSwitchStatements(t *testing.T) {
+// 	testCases := []testCase{
+// 		{
+// 			name:  "Simple switch statement",
+// 			input: "{%switch var%}\n{%case 1%}\ntext\n{%end%}",
+// 			expected: []parser.Node{
+// 				parser.SwitchStmt{
+// 					BegTag: parser.StmtTagWithExpr{
+// 						StmtTag: parser.StmtTag{
+// 							Kw: token.SWITCH,
+// 						},
+// 						Body: parser.Ident{
+// 							Name: "var",
+// 						},
+// 					},
+// 					Cases: []parser.CaseClause{
+// 						{
+// 							CaseTag: parser.StmtTagWithExpr{
+// 								StmtTag: parser.StmtTag{
+// 									Kw: token.CASE,
+// 								},
+// 								Body: parser.Lit{
+// 									Value: value.NumberValue(1),
+// 								},
+// 							},
+// 							Body: []parser.Node{
+// 								parser.Text{
+// 									Val: []string{
+// 										"text",
+// 										"\n",
+// 									},
+// 								},
+// 							},
+// 						},
+// 					},
+// 					DefaultCase: []parser.Node{},
+// 				},
+// 				parser.IfStmt{
+// 					BegTag: parser.StmtTagWithExpr{
+// 						StmtTag: parser.StmtTag{
+// 							Kw: token.IF,
+// 						},
+// 						Body: parser.Ident{
+// 							Name: "var",
+// 						},
+// 					},
+// 					Body: []parser.Node{
+// 						parser.Text{
+// 							Val: []string{
+// 								"text",
+// 								"\n",
+// 							},
+// 						},
+// 					},
+// 					Else: nil,
+// 				},
+// 			},
+// 		},
+// 	}
+// 	runTestCases(t, testCases)
+// }

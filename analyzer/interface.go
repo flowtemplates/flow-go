@@ -60,9 +60,9 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 
 func GetTypeMapFromString(input string, tm TypeMap) error {
 	tokens := lexer.TokensFromString(input)
-	ast, errs := parser.New(tokens).Parse()
-	if len(errs) != 0 {
-		return errs[0]
+	ast, err := parser.New(tokens).Parse()
+	if err != nil {
+		return err
 	}
 
 	if errs := GetTypeMapFromAst(ast, tm); len(errs) != 0 {

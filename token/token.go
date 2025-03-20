@@ -97,9 +97,10 @@ const (
 	EXTEND  // extend
 	AND     // and
 	OR      // or
+	DO      // do
 	IS      // is
 	NOT     // not
-	DO      // do
+	ISNOT   // is not
 	keyword_end
 )
 
@@ -180,6 +181,7 @@ var tokens = []string{
 	IS:      "is",
 	NOT:     "not",
 	DO:      "do",
+	ISNOT:   "is not",
 }
 
 const (

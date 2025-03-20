@@ -23,7 +23,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 			got := make(analyzer.TypeMap)
 			errs := analyzer.GetTypeMapFromAst(tc.input, got)
 			if (len(errs) != 0) != tc.errExpected {
-				t.Errorf("Input: %q\nUnexpected error: %v", tc.expected, errs)
+				t.Errorf("Input: %q\nUnexpected error: %v", tc.str, errs)
 				return
 			}
 

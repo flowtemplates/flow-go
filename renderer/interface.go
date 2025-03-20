@@ -1,8 +1,6 @@
 package renderer
 
 import (
-	"strings"
-
 	"github.com/flowtemplates/flow-go/lexer"
 	"github.com/flowtemplates/flow-go/parser"
 )
@@ -23,54 +21,11 @@ func RenderAst(ast []parser.Node, scope Scope) (string, error) {
 	return render(ast, "", context)
 }
 
-func render(ast []parser.Node, indent string, context Context) (string, error) {
-	var result strings.Builder
-	for _, node := range ast {
-		switch n := node.(type) {
-		case parser.Text:
-			for _, s := range n.Val {
-				result.WriteString(strings.TrimPrefix(s, indent))
-			}
-		case parser.ExprBlock:
-			s, err := exprToValue(n.Body, context)
-			if err != nil {
-				return "", err
-			}
-
-			result.WriteString(s.String())
-		case parser.IfStmt:
-			conditionValue, err := exprToValue(n.BegTag.Body, context)
-			if err != nil {
-				return "", err
-			}
-
-			indent += n.BegTag.PreWs
-			if conditionValue.Boolean() {
-				bodyContent, err := render(n.Body, indent, context)
-				if err != nil {
-					return "", err
-				}
-
-				result.WriteString(bodyContent)
-			} else if n.Else != nil {
-				elseContent, err := render(n.Else, indent, context)
-				if err != nil {
-					return "", err
-				}
-
-				result.WriteString(elseContent)
-			}
-		}
-	}
-
-	return result.String(), nil
-}
-
 func RenderString(input string, scope Scope) (string, error) {
 	tokens := lexer.TokensFromString(input)
-	ast, errs := parser.New(tokens).Parse()
-	if len(errs) != 0 {
-		return "", errs[0]
+	ast, err := parser.New(tokens).Parse()
+	if err != nil {
+		return "", err
 	}
 
 	res, err := RenderAst(ast, scope)

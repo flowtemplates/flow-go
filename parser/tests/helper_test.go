@@ -12,7 +12,7 @@ type testCase struct {
 	name        string
 	input       string
 	expected    parser.Expr
-	errExpected bool
+	errExpected error
 }
 
 func runTestCases(t *testing.T, testCases []testCase) {
@@ -20,7 +20,13 @@ func runTestCases(t *testing.T, testCases []testCase) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := parser.AstFromString(tc.input)
 
-			if (err != nil) != tc.errExpected {
+			if tc.errExpected != nil {
+				if tc.errExpected.Error() != err.Error() {
+					t.Errorf("Input: %q\nUnexpected error: %v, got: %v", tc.input, err, tc.errExpected)
+					return
+				}
+				return
+			} else if err != nil {
 				t.Errorf("Input: %q\nUnexpected error: %v", tc.input, err)
 				return
 			}

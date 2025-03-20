@@ -70,9 +70,21 @@ type (
 	}
 
 	IfStmt struct {
-		BegTag      StmtTagWithExpr
+		BegTag      StmtTagWithExpr // TODO: maybe do not use StmtTagWithExpr
 		Body        []Node
 		Else        []Node
 		PreEndTagWs string
+	}
+
+	SwitchStmt struct {
+		BegTag      StmtTagWithExpr
+		Cases       []CaseClause
+		DefaultCase []Node
+		PreEndTagWs string
+	}
+
+	CaseClause struct {
+		CaseTag StmtTagWithExpr
+		Body    []Node
 	}
 )

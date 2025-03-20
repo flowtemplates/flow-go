@@ -515,11 +515,20 @@ func TestStringLiterals(t *testing.T) {
 func TestStringLiteralsEdgeCases(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:  "String not terminated",
+			name:  "String terminated with EOF",
 			input: `{{"double`,
 			expected: []token.Token{
 				{Kind: token.LEXPR},
 				{Kind: token.NOT_TERMINATED_STR, Val: `"double`},
+			},
+		},
+		{
+			name:  "String terminated with line break",
+			input: "{{\"double\n",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.NOT_TERMINATED_STR, Val: `"double`},
+				{Kind: token.LNBR, Val: "\n"},
 			},
 		},
 		{

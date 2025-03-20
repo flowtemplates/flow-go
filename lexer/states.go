@@ -182,7 +182,11 @@ func lexSQString(l *Lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
-		case eof, '\n', '\r':
+		case eof:
+			l.emit(token.NOT_TERMINATED_STR)
+			return lexText
+		case '\n':
+			l.back()
 			l.emit(token.NOT_TERMINATED_STR)
 			return lexText
 		case token.SQUOTE:
@@ -197,7 +201,11 @@ func lexDQString(l *Lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
-		case eof, '\n', '\r':
+		case eof:
+			l.emit(token.NOT_TERMINATED_STR)
+			return lexText
+		case '\n':
+			l.back()
 			l.emit(token.NOT_TERMINATED_STR)
 			return lexText
 		case token.DQUOTE:

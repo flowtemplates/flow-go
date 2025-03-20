@@ -37,8 +37,15 @@ func TestExpressions(t *testing.T) {
 			errExpected: false,
 		},
 		{
-			name:        "String literal",
+			name:        "String literal in double quotes",
 			input:       `{{"word"}}`,
+			expected:    "word",
+			scope:       renderer.Scope{},
+			errExpected: false,
+		},
+		{
+			name:        "String literal in single quotes",
+			input:       `{{'word'}}`,
 			expected:    "word",
 			scope:       renderer.Scope{},
 			errExpected: false,
@@ -93,6 +100,24 @@ func TestExpressions(t *testing.T) {
 			errExpected: false,
 		},
 		{
+			name:     "Expression with number var",
+			input:    "{{age}}",
+			expected: "1",
+			scope: renderer.Scope{
+				"age": 1,
+			},
+			errExpected: false,
+		},
+		{
+			name:     "Expression with boolean var",
+			input:    "{{flag}}",
+			expected: "",
+			scope: renderer.Scope{
+				"flag": false,
+			},
+			errExpected: false,
+		},
+		{
 			name:     "Multiple expressions",
 			input:    "Hello {{name}}!\nFrom {{ flow }} templates",
 			expected: "Hello world!\nFrom flow templates",
@@ -101,6 +126,54 @@ func TestExpressions(t *testing.T) {
 				"flow": "flow",
 			},
 			errExpected: false,
+		},
+	}
+	runTestCases(t, testCases)
+}
+
+func TestOperators(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:     "String literals and",
+			input:    "{{'a' && 'b'}}",
+			expected: "b",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Number literals and",
+			input:    "{{1 && 2}}",
+			expected: "2",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Number literals falsy and",
+			input:    "{{0 && 0}}",
+			expected: "0",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Equality with empty string",
+			input:    "{{0 == ''}}",
+			expected: "",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Number literals or",
+			input:    "{{1 || 2}}",
+			expected: "1",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Multiple ||",
+			input:    "{{'a' || 'b' || 'c'}}",
+			expected: "a",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Multiple &&",
+			input:    "{{'a' && 'b' && 'c'}}",
+			expected: "c",
+			scope:    renderer.Scope{},
 		},
 	}
 	runTestCases(t, testCases)
