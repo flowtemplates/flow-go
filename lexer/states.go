@@ -7,9 +7,9 @@ import (
 	"github.com/flowtemplates/flow-go/token"
 )
 
-type stateFn func(*Lexer) stateFn
+type stateFn func(*lexer) stateFn
 
-func (l *Lexer) lexToken(t token.Kind, next stateFn) stateFn {
+func (l *lexer) lexToken(t token.Kind, next stateFn) stateFn {
 	tokLen := len(token.TokenString(t))
 	l.pos.Offset += tokLen
 	l.pos.Column += tokLen
@@ -17,7 +17,7 @@ func (l *Lexer) lexToken(t token.Kind, next stateFn) stateFn {
 	return next
 }
 
-func (l *Lexer) startsWith(t token.Kind) bool {
+func (l *lexer) startsWith(t token.Kind) bool {
 	tokString := token.TokenString(t)
 	if tokString != "" {
 		return strings.HasPrefix(l.input[l.pos.Offset:], tokString)
@@ -26,7 +26,7 @@ func (l *Lexer) startsWith(t token.Kind) bool {
 	return false
 }
 
-func (l *Lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
+func (l *lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
 	for _, token := range tokens {
 		if l.startsWith(token) {
 			return l.lexToken(token, nextState)
@@ -36,7 +36,7 @@ func (l *Lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
 	return nil
 }
 
-func lexText(l *Lexer) stateFn {
+func lexText(l *lexer) stateFn {
 	for {
 		r := l.peek()
 		if r == eof {
@@ -96,7 +96,7 @@ func lexText(l *Lexer) stateFn {
 
 // TODO: rename
 func lexRealExpr(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		r := l.next()
 
 		if r == eof {
@@ -134,7 +134,7 @@ func lexRealExpr(nextState stateFn) stateFn {
 	}
 }
 
-func lexExpr(l *Lexer) stateFn {
+func lexExpr(l *lexer) stateFn {
 	if l.startsWith(token.REXPR) {
 		return l.lexToken(token.REXPR, lexText)
 	}
@@ -153,7 +153,7 @@ func lexExpr(l *Lexer) stateFn {
 	return lexRealExpr(lexExpr)
 }
 
-func lexComm(l *Lexer) stateFn {
+func lexComm(l *lexer) stateFn {
 	// ? try to lex something to do not cause commenting whole thing if there is no closing tag
 	for {
 		if l.startsWith(token.RCOMM) {
@@ -170,7 +170,7 @@ func lexComm(l *Lexer) stateFn {
 }
 
 func lexNum(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		digits := "0123456789"
 
 		l.acceptRun(digits)
@@ -185,7 +185,7 @@ func lexNum(nextState stateFn) stateFn {
 	}
 }
 
-func lexSQString(l *Lexer) stateFn {
+func lexSQString(l *lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
@@ -204,7 +204,7 @@ func lexSQString(l *Lexer) stateFn {
 }
 
 // TODO: refactor
-func lexDQString(l *Lexer) stateFn {
+func lexDQString(l *lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
@@ -223,7 +223,7 @@ func lexDQString(l *Lexer) stateFn {
 }
 
 func lexIdent(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		for {
 			switch r := l.next(); {
 			case r == eof:
@@ -239,7 +239,7 @@ func lexIdent(nextState stateFn) stateFn {
 }
 
 func lexLineWhitespace(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		for {
 			switch r := l.peek(); {
 			case r == ' ' || r == '\t':
@@ -255,7 +255,7 @@ func lexLineWhitespace(nextState stateFn) stateFn {
 	}
 }
 
-func lexStmt(l *Lexer) stateFn {
+func lexStmt(l *lexer) stateFn {
 	if l.startsWith(token.RSTMT) {
 		return l.lexToken(token.RSTMT, lexLineWhitespace(lexText))
 	}

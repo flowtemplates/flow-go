@@ -6,44 +6,7 @@ import (
 
 const eof = 0
 
-type Lexer struct {
-	input  string
-	start  token.Position
-	pos    token.Position
-	tokens chan token.Token
-}
-
-func FromString(input string) *Lexer {
-	l := &Lexer{
-		input: input,
-		start: token.Position{
-			Offset: 0,
-			Line:   1,
-			Column: 1,
-		},
-		tokens: make(chan token.Token, 2),
-	}
-	l.pos = l.start
-
-	go l.run()
-	return l
-}
-
-func TokensFromString(input string) []token.Token {
-	l := FromString(input)
-	var tokens []token.Token
-	for {
-		tok := l.NextToken()
-		if tok.Kind == token.EOF {
-			break
-		}
-		tokens = append(tokens, tok)
-	}
-
-	return tokens
-}
-
-func (l *Lexer) emit(t token.Kind) {
+func (l *lexer) emit(t token.Kind) {
 	if l.start.Offset < l.pos.Offset {
 		l.tokens <- token.Token{
 			Kind: t,
@@ -54,18 +17,14 @@ func (l *Lexer) emit(t token.Kind) {
 	}
 }
 
-func (l *Lexer) NextToken() token.Token {
-	return <-l.tokens
-}
-
-func (l *Lexer) run() {
+func (l *lexer) run() {
 	for state := lexLineWhitespace(lexText); state != nil; {
 		state = state(l)
 	}
 	close(l.tokens)
 }
 
-func (l *Lexer) next() rune {
+func (l *lexer) next() rune {
 	if l.pos.Offset >= len(l.input) {
 		return eof
 	}
@@ -84,7 +43,7 @@ func (l *Lexer) next() rune {
 	return r
 }
 
-func (l *Lexer) back() {
+func (l *lexer) back() {
 	if l.pos.Offset <= 0 {
 		return
 	}
@@ -102,7 +61,7 @@ func (l *Lexer) back() {
 	}
 }
 
-func (l *Lexer) peek() rune {
+func (l *lexer) peek() rune {
 	if l.pos.Offset < len(l.input) {
 		r := rune(l.input[l.pos.Offset])
 		return r
@@ -110,7 +69,7 @@ func (l *Lexer) peek() rune {
 	return eof
 }
 
-func (l *Lexer) accept(valid string) bool {
+func (l *lexer) accept(valid string) bool {
 	r := l.next()
 	for _, c := range valid {
 		if c == r {
@@ -122,7 +81,7 @@ func (l *Lexer) accept(valid string) bool {
 	return false
 }
 
-func (l *Lexer) acceptRun(valid string) {
+func (l *lexer) acceptRun(valid string) {
 	for l.accept(valid) {
 	}
 }

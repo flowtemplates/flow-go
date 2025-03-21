@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"github.com/flowtemplates/flow-go/lexer"
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/types"
 )
@@ -59,8 +58,7 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 }
 
 func GetTypeMapFromString(input string, tm TypeMap) error {
-	tokens := lexer.TokensFromString(input)
-	ast, err := parser.New(tokens).Parse()
+	ast, err := parser.AstFromString(input)
 	if err != nil {
 		return err
 	}
