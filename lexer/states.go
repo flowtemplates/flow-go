@@ -98,32 +98,39 @@ func lexText(l *Lexer) stateFn {
 func lexRealExpr(nextState stateFn) stateFn {
 	return func(l *Lexer) stateFn {
 		r := l.next()
-		switch {
-		case r == eof:
+
+		if r == eof {
 			return nil
-		case r == '\n' || r == '\r':
+		}
+		if r == '\n' || r == '\r' {
 			l.back()
 			return lexText
-		case unicode.IsSpace(r):
+		}
+		if unicode.IsSpace(r) {
 			return lexLineWhitespace(nextState)
-		case r == '\'':
+		}
+		if r == '\'' {
 			return lexSQString
-		case r == '"':
+		}
+		if r == '"' {
 			return lexDQString
-		case r == token.TokenRune(token.LPAREN):
+		}
+		if r == token.TokenRune(token.LPAREN) {
 			l.back()
 			return l.lexToken(token.LPAREN, nextState)
-		case r == token.TokenRune(token.RPAREN):
+		}
+		if r == token.TokenRune(token.RPAREN) {
 			l.back()
 			return l.lexToken(token.RPAREN, nextState)
-		case unicode.IsDigit(r):
-			return lexNum(nextState)
-		case token.IsNotOp(r) && r != '.':
-			return lexIdent(nextState)
-		default:
-			l.emit(token.EXPECTED_EXPR)
-			return nextState
 		}
+		if unicode.IsDigit(r) {
+			return lexNum(nextState)
+		}
+		if token.IsNotOp(r) && r != token.TokenRune(token.PERIOD) {
+			return lexIdent(nextState)
+		}
+
+		return nextState
 	}
 }
 

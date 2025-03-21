@@ -1,6 +1,8 @@
 package parser
 
-import "github.com/flowtemplates/flow-go/lexer"
+import (
+	"github.com/flowtemplates/flow-go/lexer"
+)
 
 func AstFromString(input string) ([]Node, error) {
 	tokens := lexer.TokensFromString(input)

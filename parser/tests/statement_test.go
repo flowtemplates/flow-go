@@ -11,8 +11,11 @@ import (
 func TestIfStatements(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:  "Simple if statement",
-			input: "{%if var%}\ntext\n{%end%}",
+			name: "Simple if statement",
+			input: `
+{%if var%}
+text
+{%end%}`[1:],
 			expected: []parser.Node{
 				parser.IfStmt{
 					BegTag: parser.StmtTagWithExpr{
@@ -36,8 +39,33 @@ func TestIfStatements(t *testing.T) {
 			},
 		},
 		{
-			name:  "If statement (with whitespaces)",
-			input: "{% if var  %}\ntext\n{% end %}",
+			name:  "Simple if statement in one line",
+			input: "{%if var%}text{%end%}",
+			expected: []parser.Node{
+				parser.IfStmt{
+					BegTag: parser.StmtTagWithExpr{
+						StmtTag: parser.StmtTag{
+							Kw: token.IF,
+						},
+						Body: parser.Ident{
+							Name: "var",
+						},
+					},
+					Body: []parser.Node{
+						parser.Text{
+							Val: []string{"text"},
+						},
+					},
+					Else: nil,
+				},
+			},
+		},
+		{
+			name: "If statement (with whitespaces)",
+			input: `
+{% if var  %}
+text
+{% end %}`[1:],
 			expected: []parser.Node{
 				parser.IfStmt{
 					BegTag: parser.StmtTagWithExpr{
@@ -61,8 +89,11 @@ func TestIfStatements(t *testing.T) {
 			},
 		},
 		{
-			name:  "If statement with indentation",
-			input: "\t{%if var%}\n\ttext\n\t{%end%}",
+			name: "If statement with indentation",
+			input: `
+	{%if var%}
+	text
+	{%end%}`[1:],
 			expected: []parser.Node{
 				parser.IfStmt{
 					BegTag: parser.StmtTagWithExpr{
@@ -89,8 +120,15 @@ func TestIfStatements(t *testing.T) {
 			},
 		},
 		{
-			name:  "Nested if blocks",
-			input: "{%if var%}\n1\n{%if name%}\ntext\n{%end%}\n2\n{%end%}",
+			name: "Nested if blocks",
+			input: `
+{%if var%}
+1
+{%if name%}
+text
+{%end%}
+2
+{%end%}`[1:],
 			expected: []parser.Node{
 				parser.IfStmt{
 					BegTag: parser.StmtTagWithExpr{
@@ -132,16 +170,71 @@ func TestIfStatements(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-// func TestIfStatementsEdgeCases(t *testing.T) {
-// 	testCases := []testCase{
-// 		{
-// 			name:        "If statement (with text before)",
-// 			input:       "Text{%if var%}\ntext\n{%end%}",
-// 			errExpected: true,
-// 		},
-// 	}
-// 	runTestCases(t, testCases)
-// }
+func TestIfStatementsEdgeCases(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:     "If statement without end tag",
+			input:    "{%if var%}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrEndExpected,
+			},
+		},
+		{
+			name: "If statement with body without end tag",
+			input: `
+{%if var%}
+Some {{text}}`[1:],
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrEndExpected,
+			},
+		},
+		{
+			name: "If statement without end keyword unclosed",
+			input: `
+{%if var%}
+{%`[1:],
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrKeywordExpected,
+			},
+		},
+		{
+			name: "If statement with unclosed end tag",
+			input: `
+{%if var%}
+{% end`[1:],
+			expected: []parser.Node{},
+			errExpected: parser.ExpectedTokensError{
+				Tokens: []token.Kind{token.RSTMT},
+			},
+		},
+		{
+			name: "If statement without end keyword unclosed with body",
+			input: `
+{%if var%}
+{{text}}
+{%`[1:],
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrKeywordExpected,
+			},
+		},
+		{
+			name: "If statement with unclosed end tag with body",
+			input: `
+{%if var%}
+{{text}}
+{% end`[1:],
+			expected: []parser.Node{},
+			errExpected: parser.ExpectedTokensError{
+				Tokens: []token.Kind{token.RSTMT},
+			},
+		},
+	}
+	runTestCases(t, testCases)
+}
 
 func TestGenIfStatements(t *testing.T) {
 	testCases := []testCase{
@@ -186,8 +279,12 @@ func TestGenIfStatements(t *testing.T) {
 // func TestSwitchStatements(t *testing.T) {
 // 	testCases := []testCase{
 // 		{
-// 			name:  "Simple switch statement",
-// 			input: "{%switch var%}\n{%case 1%}\ntext\n{%end%}",
+// 			name: "Simple switch statement",
+// 			input: `
+// {%switch var%}
+// {%case 1%}
+// text
+// {%end%}`[1:],
 // 			expected: []parser.Node{
 // 				parser.SwitchStmt{
 // 					BegTag: parser.StmtTagWithExpr{

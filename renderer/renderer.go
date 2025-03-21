@@ -139,7 +139,7 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 				return x, nil
 			}
 			return y, nil
-		case token.GTR:
+		case token.GRTR:
 			return value.BooleanValue(x.Number() > y.Number()), nil
 		case token.LESS:
 			return value.BooleanValue(x.Number() < y.Number()), nil

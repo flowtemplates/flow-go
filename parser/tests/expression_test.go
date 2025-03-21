@@ -287,14 +287,38 @@ func TestExpressionsEdgeCases(t *testing.T) {
 				Typ: parser.ErrExpressionExpected,
 			},
 		},
-		// {
-		// 	name:     "Unterminated expression",
-		// 	input:    "{{",
-		// 	expected: []parser.Node{},
-		// 	errExpected: parser.ExpectedTokenError{
-		// 		Tokens: []token.Kind{token.REXPR},
-		// 	},
-		// },
+		{
+			name:     "Expression interrupted with EOF",
+			input:    "{{",
+			expected: []parser.Node{},
+			errExpected: parser.ExpectedTokensError{
+				Tokens: []token.Kind{token.REXPR},
+			},
+		},
+		{
+			name:     "Expression with var interrupted with EOF",
+			input:    "{{var",
+			expected: []parser.Node{},
+			errExpected: parser.ExpectedTokensError{
+				Tokens: []token.Kind{token.REXPR},
+			},
+		},
+		{
+			name:     "Expression interrupted with line break",
+			input:    "{{\n",
+			expected: []parser.Node{},
+			errExpected: parser.ExpectedTokensError{
+				Tokens: []token.Kind{token.REXPR},
+			},
+		},
+		{
+			name:     "Expression interrupted with line break with text and expression after",
+			input:    "{{\nText{{1}}",
+			expected: []parser.Node{},
+			errExpected: parser.ExpectedTokensError{
+				Tokens: []token.Kind{token.REXPR},
+			},
+		},
 	}
 	runTestCases(t, testCases)
 }

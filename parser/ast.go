@@ -70,7 +70,7 @@ type (
 	}
 
 	IfStmt struct {
-		BegTag      StmtTagWithExpr // TODO: maybe do not use StmtTagWithExpr
+		BegTag      StmtTagWithExpr
 		Body        []Node
 		Else        []Node
 		PreEndTagWs string

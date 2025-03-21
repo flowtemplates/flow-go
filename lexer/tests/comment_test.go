@@ -10,7 +10,7 @@ func TestComments(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:  "Empty comment",
-			input: "{##}",
+			input: `{##}`,
 			expected: []token.Token{
 				{Kind: token.LCOMM},
 				{Kind: token.RCOMM},
@@ -26,8 +26,12 @@ func TestComments(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiline comment",
-			input: "{# line 1\nline 2\n\nline 3 #}",
+			name: "Multiline comment",
+			input: `
+{# line 1
+line 2
+
+line 3 #}`[1:],
 			expected: []token.Token{
 				{Kind: token.LCOMM},
 				{Kind: token.COMM_TEXT, Val: " line 1\nline 2\n\nline 3 "},
@@ -35,8 +39,11 @@ func TestComments(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiple comments",
-			input: "{# line 1 #}\n{# line 2 #}\n{# line 3 #}",
+			name: "Multiple comments",
+			input: `
+{# line 1 #}
+{# line 2 #}
+{# line 3 #}`[1:],
 			expected: []token.Token{
 				{Kind: token.LCOMM},
 				{Kind: token.COMM_TEXT, Val: " line 1 "},
@@ -65,7 +72,7 @@ func TestCommentsEdgeCases(t *testing.T) {
 			},
 		},
 		{
-			name:  "Comment not terminated",
+			name:  "Comment interrupted with EOF",
 			input: "{# Some content",
 			expected: []token.Token{
 				{Kind: token.LCOMM},

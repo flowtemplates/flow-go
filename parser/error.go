@@ -11,6 +11,8 @@ type ErrorType string
 
 const (
 	ErrExpressionExpected ErrorType = "expression expected"
+	ErrEndExpected        ErrorType = "'{% end %}' expected"
+	ErrKeywordExpected    ErrorType = "'if', 'genif', 'end' expected"
 )
 
 type Error struct {
@@ -22,18 +24,18 @@ func (e Error) Error() string {
 	return string(e.Typ)
 }
 
-type ExpectedTokenError struct {
+type ExpectedTokensError struct {
 	Pos    token.Position
 	Tokens []token.Kind
 }
 
-func (e ExpectedTokenError) Error() string {
+func (e ExpectedTokensError) Error() string {
 	b := []string{}
 	for _, e := range e.Tokens {
-		b = append(b, fmt.Sprintf("%q", e.String()))
+		b = append(b, fmt.Sprintf("'%s'", e.String()))
 	}
 
-	return fmt.Sprintf("expected %s", strings.Join(b, ", "))
+	return fmt.Sprintf("%s expected", strings.Join(b, ", "))
 }
 
 // type ErrorList []error // nolint: errname

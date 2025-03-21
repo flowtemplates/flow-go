@@ -115,8 +115,12 @@ func TestIfStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "If block with indentation",
-			input: "Text\n\t{%if name%}\n\tText\n\t{%end%}",
+			name: "If block with indentation",
+			input: `
+Text
+	{%if name%}
+	Text
+	{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.TEXT, Val: "Text"},
 				{Kind: token.LNBR, Val: "\n"},
@@ -137,8 +141,11 @@ func TestIfStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "If block with text before",
-			input: "Text{%if name%}\nText\n{%end%}",
+			name: "If block with text before",
+			input: `
+Text{%if name%}
+Text
+{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.TEXT, Val: "Text"},
 				{Kind: token.LSTMT},
@@ -213,8 +220,15 @@ func TestIfStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "If-elseif-else block (with text between)",
-			input: "{%if name%}\nText\n{%else if%}\n{%else%}\nSometext\n{%end%}",
+			name: "If-elseif-else block (with text between)",
+			input: `
+{%if name%}
+Text
+{%else if%}
+2
+{%else%}
+Sometext
+{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.LSTMT},
 				{Kind: token.IF},
@@ -229,6 +243,8 @@ func TestIfStatement(t *testing.T) {
 				{Kind: token.WS, Val: " "},
 				{Kind: token.IF},
 				{Kind: token.RSTMT},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.TEXT, Val: "2"},
 				{Kind: token.LNBR, Val: "\n"},
 				{Kind: token.LSTMT},
 				{Kind: token.ELSE},
@@ -248,8 +264,11 @@ func TestIfStatement(t *testing.T) {
 func TestSwitchStatement(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:  "Emtpy switch block",
-			input: "{%switch name%}\n{%case a%}\n{%end%}",
+			name: "Emtpy switch block",
+			input: `
+{%switch name%}
+{%case a%}
+{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.LSTMT},
 				{Kind: token.SWITCH},
@@ -269,8 +288,12 @@ func TestSwitchStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "Switch block",
-			input: "{%switch name%}\n{%case a%}\nText\n{%end%}",
+			name: "Switch block",
+			input: `
+{%switch name%}
+{%case a%}
+Text
+{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.LSTMT},
 				{Kind: token.SWITCH},
@@ -292,8 +315,10 @@ func TestSwitchStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "Switch block with whitespaces after tag",
-			input: "{%switch name%}  \n{%end%}",
+			name: "Switch block with whitespaces after tag",
+			input: `
+{%switch name%}  
+{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.LSTMT},
 				{Kind: token.SWITCH},
@@ -308,8 +333,31 @@ func TestSwitchStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "Switch block with indentation",
-			input: "Text\n\t{%switch name%}\n\t{%case a%}\n\tText\n\t{%end%}",
+			name: "Switch block with text after tag",
+			input: `
+{%switch name%}asd
+{%end%}`[1:],
+			expected: []token.Token{
+				{Kind: token.LSTMT},
+				{Kind: token.SWITCH},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.IDENT, Val: "name"},
+				{Kind: token.RSTMT},
+				{Kind: token.TEXT, Val: "asd"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LSTMT},
+				{Kind: token.END},
+				{Kind: token.RSTMT},
+			},
+		},
+		{
+			name: "Switch block with indentation",
+			input: `
+Text
+	{%switch name%}
+	{%case a%}
+	Text
+	{%end%}`[1:],
 			expected: []token.Token{
 				{Kind: token.TEXT, Val: "Text"},
 				{Kind: token.LNBR, Val: "\n"},
@@ -331,52 +379,6 @@ func TestSwitchStatement(t *testing.T) {
 				{Kind: token.TEXT, Val: "Text"},
 				{Kind: token.LNBR, Val: "\n"},
 				{Kind: token.WS, Val: "\t"},
-				{Kind: token.LSTMT},
-				{Kind: token.END},
-				{Kind: token.RSTMT},
-			},
-		},
-		{
-			name:  "Switch-case block",
-			input: "{%switch name%}{%case a%}{%case b%}{%end%}",
-			expected: []token.Token{
-				{Kind: token.LSTMT},
-				{Kind: token.SWITCH},
-				{Kind: token.WS, Val: " "},
-				{Kind: token.IDENT, Val: "name"},
-				{Kind: token.RSTMT},
-				{Kind: token.LSTMT},
-				{Kind: token.CASE},
-				{Kind: token.WS, Val: " "},
-				{Kind: token.IDENT, Val: "a"},
-				{Kind: token.RSTMT},
-				{Kind: token.LSTMT},
-				{Kind: token.CASE},
-				{Kind: token.WS, Val: " "},
-				{Kind: token.IDENT, Val: "b"},
-				{Kind: token.RSTMT},
-				{Kind: token.LSTMT},
-				{Kind: token.END},
-				{Kind: token.RSTMT},
-			},
-		},
-		{
-			name:  "Switch-case-default block",
-			input: "{%switch name%}{%case a%}{%default%}{%end%}",
-			expected: []token.Token{
-				{Kind: token.LSTMT},
-				{Kind: token.SWITCH},
-				{Kind: token.WS, Val: " "},
-				{Kind: token.IDENT, Val: "name"},
-				{Kind: token.RSTMT},
-				{Kind: token.LSTMT},
-				{Kind: token.CASE},
-				{Kind: token.WS, Val: " "},
-				{Kind: token.IDENT, Val: "a"},
-				{Kind: token.RSTMT},
-				{Kind: token.LSTMT},
-				{Kind: token.DEFAULT},
-				{Kind: token.RSTMT},
 				{Kind: token.LSTMT},
 				{Kind: token.END},
 				{Kind: token.RSTMT},

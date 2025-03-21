@@ -1,10 +1,7 @@
 package parser
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/flowtemplates/flow-go/token"
 	"github.com/flowtemplates/flow-go/value"
@@ -13,7 +10,6 @@ import (
 type Parser struct {
 	tokens  []token.Token
 	pos     int
-	nodes   []Node
 	current token.Token
 }
 
@@ -28,6 +24,7 @@ func New(tokens []token.Token) *Parser {
 }
 
 func (p *Parser) Parse() ([]Node, error) {
+	var nodes []Node
 	for p.pos < len(p.tokens) {
 		node, err := p.parseNode()
 		if err != nil {
@@ -35,13 +32,13 @@ func (p *Parser) Parse() ([]Node, error) {
 		}
 
 		if node != nil {
-			p.nodes = append(p.nodes, node)
+			nodes = append(nodes, node)
 		} else {
 			p.next()
 		}
 	}
 
-	return p.nodes, nil
+	return nodes, nil
 }
 
 func (p *Parser) next() token.Token {
@@ -50,22 +47,35 @@ func (p *Parser) next() token.Token {
 	return p.current
 }
 
-func (p *Parser) consumeWhitespaces() string {
-	var builder strings.Builder
-	for p.current.Kind == token.WS {
-		builder.WriteString(p.current.Val)
+func (p *Parser) consumeToken(t token.Kind) string {
+	var val string
+	if p.current.Kind == t {
+		val = p.current.Val
 		p.next()
 	}
-	return builder.String()
+	return val
 }
 
 func (p *Parser) consumeLineBreak() string {
-	var builder strings.Builder
-	for p.current.Kind == token.LNBR {
-		builder.WriteString(p.current.Val)
-		p.next()
+	return p.consumeToken(token.LNBR)
+}
+
+func (p *Parser) consumeWhitespace() string {
+	return p.consumeToken(token.WS)
+}
+
+func (p *Parser) checkNextNTokens(tokens ...token.Kind) bool {
+	if p.pos+len(tokens) > len(p.tokens) {
+		return false
 	}
-	return builder.String()
+
+	for i, kind := range tokens {
+		if p.tokens[p.pos+i+1].Kind != kind {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (p *Parser) getCurrent() token.Token {
@@ -82,9 +92,8 @@ func (p *Parser) parseNode() (Node, error) {
 	case token.LNBR:
 		return p.parseText(), nil
 	case token.WS:
-		if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Kind == token.LSTMT {
-			if (p.pos+2 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.END) ||
-				(p.pos+3 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.WS && p.tokens[p.pos+3].Kind == token.END) {
+		if p.checkNextNTokens(token.LSTMT) {
+			if p.checkNextNTokens(token.LSTMT, token.END) || p.checkNextNTokens(token.LSTMT, token.WS, token.END) {
 				return nil, nil
 			}
 
@@ -103,38 +112,18 @@ func (p *Parser) parseNode() (Node, error) {
 	// case token.EOF:
 	// 	return nil // End of input
 	default:
-		return nil, errors.New("unexpected token while parsing node")
+		return nil, nil
 	}
 }
 
 func (p *Parser) parseText() Node {
 	var res []string
-loop:
-	for {
-		if p.current.Kind == token.EOF {
+	for p.current.IsOneOfMany(token.TEXT, token.LNBR, token.WS) {
+		if p.current.Kind == token.WS && p.checkNextNTokens(token.LSTMT) {
 			break
 		}
 
-		switch p.current.Kind {
-		case token.TEXT:
-			res = append(res, p.current.Val)
-		case token.LNBR:
-			res = append(res, p.current.Val)
-		case token.WS:
-			// TODO: refactor
-			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Kind == token.LSTMT {
-				if (p.pos+2 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.END) ||
-					(p.pos+3 < len(p.tokens) && p.tokens[p.pos+2].Kind == token.WS && p.tokens[p.pos+3].Kind == token.END) {
-					break loop
-				}
-				break loop
-			}
-
-			res = append(res, p.current.Val)
-		default:
-			break loop
-		}
-
+		res = append(res, p.current.Val)
 		p.next()
 	}
 
@@ -150,7 +139,7 @@ func (p *Parser) parseExprBlock() (Node, error) {
 		LBrace: p.current.Pos,
 	}
 	p.next() // Consume LEXPR
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 
 	body, err := p.parseExpr()
 	if err != nil {
@@ -159,7 +148,7 @@ func (p *Parser) parseExprBlock() (Node, error) {
 	exprBlock.Body = body
 
 	if p.current.Kind != token.REXPR {
-		return nil, ExpectedTokenError{
+		return nil, ExpectedTokensError{
 			Pos:    p.current.Pos,
 			Tokens: []token.Kind{token.REXPR},
 		}
@@ -189,7 +178,7 @@ func (p *Parser) parseTernaryExpr(minPrecedence int) (Node, error) {
 			Do:        doTok.Kind,
 		}
 		p.next() // Consume '?'
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 
 		trueExpr, err := p.parseExpr()
 		if err != nil {
@@ -205,7 +194,7 @@ func (p *Parser) parseTernaryExpr(minPrecedence int) (Node, error) {
 		}
 
 		if p.current.Kind != expectedElseTok {
-			return nil, ExpectedTokenError{
+			return nil, ExpectedTokensError{
 				Pos:    p.current.Pos,
 				Tokens: []token.Kind{expectedElseTok},
 			}
@@ -215,7 +204,7 @@ func (p *Parser) parseTernaryExpr(minPrecedence int) (Node, error) {
 		ternary.Else = p.current.Kind
 
 		p.next() // Consume elseToken
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 
 		falseExpr, err := p.parseExpr()
 		if err != nil {
@@ -233,7 +222,7 @@ func (p *Parser) parseUnaryExpr() (Node, error) {
 	if p.current.IsOneOfMany(token.NOT, token.EXCL) {
 		op := p.current
 		p.next() // Consume operator
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 
 		operand, err := p.parseUnaryExpr()
 		if err != nil {
@@ -265,14 +254,14 @@ func (p *Parser) parseBinaryExpr(minPrecedence int) (Node, error) {
 		op := p.current
 		p.next()
 
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 		if op.Kind == token.IS && p.current.Kind == token.NOT {
 			op = token.Token{
 				Kind: token.ISNOT,
 				Pos:  op.Pos,
 			}
 			p.next()
-			p.consumeWhitespaces()
+			p.consumeWhitespace()
 		}
 
 		nextMinPrecedence := opPrecedence
@@ -305,7 +294,7 @@ func (p *Parser) parsePrimary() (Node, error) {
 			Name: p.current.Val,
 		}
 		p.next()
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 		return ident, nil
 	case token.INT, token.FLOAT, token.STR:
 		var val value.Valueable
@@ -328,7 +317,7 @@ func (p *Parser) parsePrimary() (Node, error) {
 		}
 
 		p.next()
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 		return lit, nil
 	case token.LPAREN:
 		p.next() // Consume '('
@@ -337,19 +326,24 @@ func (p *Parser) parsePrimary() (Node, error) {
 			return nil, err
 		}
 		if p.current.Kind != token.RPAREN {
-			return nil, ExpectedTokenError{
+			return nil, ExpectedTokensError{
 				Pos:    p.current.Pos,
 				Tokens: []token.Kind{token.RPAREN},
 			}
 		}
 
 		p.next() // Consume ')'
-		p.consumeWhitespaces()
+		p.consumeWhitespace()
 		return expr, nil
-	default:
+	case token.REXPR:
 		return nil, Error{
 			Pos: p.current.Pos,
 			Typ: ErrExpressionExpected,
+		}
+	default:
+		return nil, ExpectedTokensError{
+			Pos:    p.current.Pos,
+			Tokens: []token.Kind{token.REXPR},
 		}
 	}
 }
@@ -377,22 +371,27 @@ func getPrecedence(tok token.Token) (int, bool) {
 
 func (p *Parser) parseStmt(preBlockWs string) (Node, error) {
 	if p.current.Kind != token.LSTMT {
-		return nil, ExpectedTokenError{
+		return nil, ExpectedTokensError{
 			Pos:    p.current.Pos,
 			Tokens: []token.Kind{token.LSTMT},
 		}
 	}
 
 	p.next() // Consume LSTMT
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 
 	switch p.current.Kind {
 	case token.IF:
 		return p.parseIfStmt(preBlockWs)
 	case token.GENIF:
 		return p.parseGenIfStmt()
+	// case token.SWITCH:
+	// 	return p.parseSwitchStmt(preBlockWs)
 	default:
-		return nil, errors.New("")
+		return nil, Error{
+			Pos: p.current.Pos,
+			Typ: ErrKeywordExpected,
+		}
 	}
 }
 
@@ -408,7 +407,7 @@ func (p *Parser) parseIfStmt(preBlockWs string) (Node, error) {
 		},
 	}
 	p.next() // Consume IF
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 
 	begTagBody, err := p.parseExpr()
 	if err != nil {
@@ -417,7 +416,7 @@ func (p *Parser) parseIfStmt(preBlockWs string) (Node, error) {
 	ifStmt.BegTag.Body = begTagBody
 
 	if p.current.Kind != token.RSTMT {
-		return nil, ExpectedTokenError{
+		return nil, ExpectedTokensError{
 			Pos:    p.current.Pos,
 			Tokens: []token.Kind{token.RSTMT},
 		}
@@ -432,42 +431,115 @@ func (p *Parser) parseIfStmt(preBlockWs string) (Node, error) {
 	}
 	ifStmt.Body = body
 
-	ifStmt.PreEndTagWs = p.consumeWhitespaces()
+	ifStmt.PreEndTagWs = p.consumeWhitespace()
 	// Check for "end" statement
 	if p.current.Kind != token.LSTMT {
-		return nil, ExpectedTokenError{
-			Pos:    p.current.Pos,
-			Tokens: []token.Kind{token.LSTMT},
+		return nil, Error{
+			Pos: p.current.Pos,
+			Typ: ErrEndExpected,
 		}
 	}
 
 	p.next() // Consume LSTMT
 
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 
 	if p.current.Kind != token.END {
-		return nil, ExpectedTokenError{
+		return nil, ExpectedTokensError{
 			Pos:    p.current.Pos,
 			Tokens: []token.Kind{token.END},
 		}
 	}
 	p.next() // Consume END
 
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 
 	if p.current.Kind != token.RSTMT {
-		return nil, ExpectedTokenError{
+		return nil, ExpectedTokensError{
 			Pos:    p.current.Pos,
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
 	p.next() // Consume RSTMT
 
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 	p.consumeLineBreak()
 
 	return ifStmt, nil
 }
+
+// func (p *Parser) parseSwitchStmt(preBlockWs string) (Node, error) {
+// 	ifStmt := SwitchStmt{
+// 		BegTag: StmtTagWithExpr{
+// 			StmtTag: StmtTag{
+// 				PreWs: preBlockWs,
+// 				LStmt: p.tokens[p.pos-1].Pos,
+// 				KwPos: p.current.Pos,
+// 				Kw:    token.SWITCH,
+// 			},
+// 		},
+// 	}
+// 	p.next() // Consume SWITCH
+// 	p.consumeWhitespaces()
+
+// 	begTagBody, err := p.parseExpr()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ifStmt.BegTag.Body = begTagBody
+
+// 	if p.current.Kind != token.RSTMT {
+// 		return nil, ExpectedTokenError{
+// 			Pos:    p.current.Pos,
+// 			Tokens: []token.Kind{token.RSTMT},
+// 		}
+// 	}
+// 	p.next() // Consume RSTMT
+
+// 	p.consumeLineBreak()
+
+// 	body, err := p.parseBody()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ifStmt.Body = body
+
+// 	ifStmt.PreEndTagWs = p.consumeWhitespaces()
+// 	// Check for "end" statement
+// 	if p.current.Kind != token.LSTMT {
+// 		return nil, ExpectedTokenError{
+// 			Pos:    p.current.Pos,
+// 			Tokens: []token.Kind{token.LSTMT},
+// 		}
+// 	}
+
+// 	p.next() // Consume LSTMT
+
+// 	p.consumeWhitespaces()
+
+// 	if p.current.Kind != token.END {
+// 		return nil, ExpectedTokenError{
+// 			Pos:    p.current.Pos,
+// 			Tokens: []token.Kind{token.END},
+// 		}
+// 	}
+// 	p.next() // Consume END
+
+// 	p.consumeWhitespaces()
+
+// 	if p.current.Kind != token.RSTMT {
+// 		return nil, ExpectedTokenError{
+// 			Pos:    p.current.Pos,
+// 			Tokens: []token.Kind{token.RSTMT},
+// 		}
+// 	}
+// 	p.next() // Consume RSTMT
+
+// 	p.consumeWhitespaces()
+// 	p.consumeLineBreak()
+
+// 	return ifStmt, nil
+// }
 
 func (p *Parser) parseGenIfStmt() (Node, error) {
 	genifStmt := StmtTagWithExpr{
@@ -478,7 +550,7 @@ func (p *Parser) parseGenIfStmt() (Node, error) {
 		},
 	}
 	p.next() // Consume GENIF
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 
 	// Parse the condition
 
@@ -489,14 +561,14 @@ func (p *Parser) parseGenIfStmt() (Node, error) {
 	genifStmt.Body = body
 
 	if p.current.Kind != token.RSTMT {
-		return nil, ExpectedTokenError{
+		return nil, ExpectedTokensError{
 			Pos:    p.current.Pos,
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
 	p.next() // Consume RSTMT
 
-	p.consumeWhitespaces()
+	p.consumeWhitespace()
 	p.consumeLineBreak()
 
 	return genifStmt, nil
@@ -516,7 +588,6 @@ func (p *Parser) parseBody() ([]Node, error) {
 		}
 
 		if node == nil {
-			fmt.Println("12312312312312")
 			break
 		}
 		body = append(body, node)

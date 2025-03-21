@@ -21,14 +21,41 @@ func TestExpressions(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiline plain text",
-			input: "123\n3\n4",
+			name: "Multiline plain text",
+			input: `
+123
+3
+4
+`[1:],
 			expected: []token.Token{
 				{Kind: token.TEXT, Val: "123"},
 				{Kind: token.LNBR, Val: "\n"},
 				{Kind: token.TEXT, Val: "3"},
 				{Kind: token.LNBR, Val: "\n"},
 				{Kind: token.TEXT, Val: "4"},
+				{Kind: token.LNBR, Val: "\n"},
+			},
+		},
+		{
+			name: "Multiline plain text with empty lines",
+			input: `
+123
+3
+
+
+4
+
+`[1:],
+			expected: []token.Token{
+				{Kind: token.TEXT, Val: "123"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.TEXT, Val: "3"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.TEXT, Val: "4"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LNBR, Val: "\n"},
 			},
 		},
 		{
@@ -129,12 +156,15 @@ func TestExpressions(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiline input with several blocks",
-			input: "Hello,\n {{greeting}}\n{{name}}{{surname}}",
+			name: "Multiline input with several blocks",
+			input: `
+Hello,
+{{greeting}}
+{{name}}{{surname}}
+`[1:],
 			expected: []token.Token{
 				{Kind: token.TEXT, Val: "Hello,"},
 				{Kind: token.LNBR, Val: "\n"},
-				{Kind: token.WS, Val: " "},
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "greeting"},
 				{Kind: token.REXPR},
@@ -145,6 +175,7 @@ func TestExpressions(t *testing.T) {
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "surname"},
 				{Kind: token.REXPR},
+				{Kind: token.LNBR, Val: "\n"},
 			},
 		},
 	}
@@ -162,8 +193,42 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			},
 		},
 		{
-			name:  "Line break inside expression",
-			input: "{{greeting\n}}",
+			name:  "Var name with leading digit",
+			input: "{{1user}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.INT, Val: "1"},
+				{Kind: token.IDENT, Val: "user"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Var name with period",
+			input: "{{us.er}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "us"},
+				{Kind: token.PERIOD},
+				{Kind: token.IDENT, Val: "er"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Var name with minus",
+			input: "{{us-er}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "us"},
+				{Kind: token.MINUS},
+				{Kind: token.IDENT, Val: "er"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name: "Line break inside expression",
+			input: `
+{{greeting
+}}`[1:],
 			expected: []token.Token{
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "greeting"},
@@ -195,8 +260,10 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			},
 		},
 		{
-			name:  "Text after unclosed expression",
-			input: "{{greeting\nSome text",
+			name: "Text after unclosed expression",
+			input: `
+{{greeting
+Some text`[1:],
 			expected: []token.Token{
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "greeting"},
@@ -214,8 +281,10 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			},
 		},
 		{
-			name:  "Right expr after valid expression",
-			input: "{{name}}\n}}Some text",
+			name: "Right expr after valid expression",
+			input: `
+{{name}}
+}}Some text`[1:],
 			expected: []token.Token{
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "name"},
@@ -245,7 +314,7 @@ func TestNumLiterals(t *testing.T) {
 			input: "{{-123}}",
 			expected: []token.Token{
 				{Kind: token.LEXPR},
-				{Kind: token.SUB, Val: "-"},
+				{Kind: token.MINUS, Val: "-"},
 				{Kind: token.INT, Val: "123"},
 				{Kind: token.REXPR},
 			},
@@ -264,7 +333,7 @@ func TestNumLiterals(t *testing.T) {
 			input: "{{-12.3}}",
 			expected: []token.Token{
 				{Kind: token.LEXPR},
-				{Kind: token.SUB, Val: "-"},
+				{Kind: token.MINUS, Val: "-"},
 				{Kind: token.FLOAT, Val: "12.3"},
 				{Kind: token.REXPR},
 			},
@@ -446,13 +515,13 @@ func TestNumLiteralsEdgeCases(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiple points in float value",
+			name:  "Multiple periods in float value",
 			input: "{{-12.3.2}}",
 			expected: []token.Token{
 				{Kind: token.LEXPR},
-				{Kind: token.SUB, Val: "-"},
+				{Kind: token.MINUS, Val: "-"},
 				{Kind: token.FLOAT, Val: "12.3"},
-				{Kind: token.EXPECTED_EXPR, Val: "."},
+				{Kind: token.PERIOD, Val: "."},
 				{Kind: token.INT, Val: "2"},
 				{Kind: token.REXPR},
 			},
@@ -515,7 +584,7 @@ func TestStringLiterals(t *testing.T) {
 func TestStringLiteralsEdgeCases(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:  "String terminated with EOF",
+			name:  "String interrupted with EOF",
 			input: `{{"double`,
 			expected: []token.Token{
 				{Kind: token.LEXPR},
@@ -523,7 +592,7 @@ func TestStringLiteralsEdgeCases(t *testing.T) {
 			},
 		},
 		{
-			name:  "String terminated with line break",
+			name:  "String interrupted with line break",
 			input: "{{\"double\n",
 			expected: []token.Token{
 				{Kind: token.LEXPR},
@@ -736,7 +805,7 @@ func TestOperators(t *testing.T) {
 			expected: []token.Token{
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "var"},
-				{Kind: token.GTR},
+				{Kind: token.GRTR},
 				{Kind: token.INT, Val: "1"},
 				{Kind: token.REXPR},
 			},

@@ -29,7 +29,6 @@ const (
 	errors_beg
 	// Errors
 	NOT_TERMINATED_STR
-	EXPECTED_EXPR
 	errors_end
 	valueable_end
 
@@ -45,7 +44,7 @@ const (
 	LEQ  // <=
 	GEQ  // >=
 	LESS // <
-	GTR  // >
+	GRTR // >
 	comparison_op_end
 
 	// ASSIGN     // =
@@ -55,7 +54,7 @@ const (
 	// QUO_ASSIGN // /=
 	// REM_ASSIGN // %=
 
-	SUB // -
+	MINUS // -
 	// ADD // +
 	// MUL // *
 	// DIV // /
@@ -76,7 +75,8 @@ const (
 	LBRACK // [
 	LBRACE // {
 
-	COMMA // ,
+	COMMA  // ,
+	PERIOD // .
 
 	RPAREN // )
 	RBRACK // ]
@@ -119,12 +119,11 @@ var tokens = []string{
 	STR:   "STRING",
 
 	NOT_TERMINATED_STR: "NOT_TERMINATED_STR",
-	EXPECTED_EXPR:      "EXPECTED_EXPR",
 
 	QUESTION: "?",
 	COLON:    ":",
 
-	SUB: "-",
+	MINUS: "-",
 	// ADD: "+",
 	// MUL: "*",
 	// DIV: "/",
@@ -139,7 +138,7 @@ var tokens = []string{
 
 	EQL:  "==",
 	LESS: "<",
-	GTR:  ">",
+	GRTR: ">",
 	EXCL: "!",
 	NEQL: "!=",
 	LEQ:  "<=",
@@ -155,7 +154,8 @@ var tokens = []string{
 	RBRACK: "]",
 	RBRACE: "}",
 
-	COMMA: ",",
+	COMMA:  ",",
+	PERIOD: ".",
 
 	LEXPR: "{{",
 	REXPR: "}}",
@@ -215,7 +215,7 @@ func (t Token) String() string {
 		}
 	}
 
-	return fmt.Sprintf("{Kind: %[1]s, Val: %[1]s, Pos: %s}", TokenString(t.Kind), t.Pos)
+	return fmt.Sprintf("{Kind: %s, Pos: %s}", TokenString(t.Kind), t.Pos)
 }
 
 func (t Token) IsOneOfMany(types ...Kind) bool {
