@@ -107,8 +107,12 @@ func TestIfStatement(t *testing.T) {
 			},
 		},
 		{
-			name:  "If block with body",
-			input: "{%if name%}\nText\n{%end%}",
+			name: "If block with body",
+			input: `
+{%if name%}
+Text
+{%end%}
+`[1:],
 			expected: []token.Token{
 				{Kind: token.LSTMT},
 				{Kind: token.IF},
@@ -121,9 +125,32 @@ func TestIfStatement(t *testing.T) {
 				{Kind: token.LSTMT},
 				{Kind: token.END},
 				{Kind: token.RSTMT},
+				{Kind: token.LNBR, Val: "\n"},
 			},
 		},
 		{
+			name: "If block with whitespaces after tag",
+			input: `
+{%if name%}  
+Text
+{%end%}
+`[1:],
+			expected: []token.Token{
+				{Kind: token.LSTMT},
+				{Kind: token.IF},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.IDENT, Val: "name"},
+				{Kind: token.RSTMT},
+				{Kind: token.WS, Val: "  "},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.TEXT, Val: "Text"},
+				{Kind: token.LNBR, Val: "\n"},
+				{Kind: token.LSTMT},
+				{Kind: token.END},
+				{Kind: token.RSTMT},
+				{Kind: token.LNBR, Val: "\n"},
+			},
+		}, {
 			name: "If block with indentation",
 			input: `
 Text
@@ -188,7 +215,7 @@ Text
 			},
 		},
 		{
-			name:  "If-else-if block",
+			name:  "If-elseif block",
 			input: "{%if name%}{%else if%}{%end%}",
 			expected: []token.Token{
 				{Kind: token.LSTMT},

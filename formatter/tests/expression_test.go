@@ -199,6 +199,36 @@ text
 {{ flag ? 1 : 2 }}
 `[1:],
 		},
+		{
+			name: "Simple do-else ternary",
+			input: `
+{{ flag do 1 else 2 }}
+`[1:],
+		},
+		{
+			name: "Simple ternary with equal",
+			input: `
+{{ asd == 2 ? 1 : 2 }}
+`[1:],
+		},
+		{
+			name: "Simple do-else ternary with equal",
+			input: `
+{{ asd == 2 do 1 else 2 }}
+`[1:],
+		},
+		{
+			name: "Nested ternaries",
+			input: `
+{{ flag ? bar ? 1 : 3 : 2 }}
+`[1:],
+		},
+		{
+			name: "Nested do-else ternaries",
+			input: `
+{{ flag do bar ? 1 : 3 else 2 }}
+`[1:],
+		},
 	}
 	runUnchangedTestCases(t, testCases)
 }
@@ -292,6 +322,42 @@ text
 {{ 1 }}
 text
 {{ -123 }}
+`[1:],
+		},
+		{
+			name: "Simple ternary",
+			input: `
+{{flag?1:2}}
+`[1:],
+			expected: `
+{{ flag ? 1 : 2 }}
+`[1:],
+		},
+		{
+			name: "Simple do-else ternary",
+			input: `
+{{flag do 1else 2}}
+`[1:], // TODO: maybe do not allow this '1else' thing
+			expected: `
+{{ flag do 1 else 2 }}
+`[1:],
+		},
+		{
+			name: "Simple ternary with equal",
+			input: `
+{{asd 	==2 ?1 :  2  }}
+`[1:],
+			expected: `
+{{ asd == 2 ? 1 : 2 }}
+`[1:],
+		},
+		{
+			name: "Nested ternaries",
+			input: `
+{{flag ?	 bar? 1 :3 :2 }}
+`[1:],
+			expected: `
+{{ flag ? bar ? 1 : 3 : 2 }}
 `[1:],
 		},
 	}

@@ -9,50 +9,113 @@ import (
 	"github.com/flowtemplates/flow-go/token"
 )
 
-func FromBytes(input []byte) ([]byte, error) {
-	ast, err := parser.AstFromBytes(input)
-	if err != nil {
-		return nil, fmt.Errorf("ast parsing: %w", err)
+type formatter struct {
+	buf *bytes.Buffer
+}
+
+func newFormatter() *formatter {
+	return &formatter{
+		buf: &bytes.Buffer{},
 	}
-
-	return FromAst(ast)
 }
 
-func FromAst(ast parser.Ast) ([]byte, error) {
-	var buf bytes.Buffer
-	for _, node := range ast {
-		if err := formatNode(node, 0, &buf); err != nil {
-			return nil, err
-		}
-	}
-	return buf.Bytes(), nil
+func (f *formatter) writeSpace() {
+	f.buf.WriteRune(' ')
 }
 
-func writeSpace(buf *bytes.Buffer) {
-	buf.WriteRune(' ')
+func (f *formatter) writeLineBreak() {
+	f.buf.WriteRune('\n')
 }
 
-func writeToken(buf *bytes.Buffer, kind token.Kind) {
-	buf.WriteString(token.TokenString(kind))
+func (f *formatter) writeToken(kind token.Kind) {
+	f.buf.WriteString(token.TokenString(kind))
 }
 
-func formatNode(node parser.Node, indentLevel int, buf *bytes.Buffer) error {
-	indent := strings.Repeat("\t", indentLevel)
-
+func (f *formatter) writeNode(node parser.Node) error {
 	switch n := node.(type) {
 	case *parser.TextNode:
-		buf.WriteString(indent)
-		buf.WriteString(strings.Join(n.Val, ""))
+		f.buf.WriteString(strings.Join(n.Val, ""))
 	case *parser.ExprNode:
-		writeToken(buf, token.LEXPR)
-		writeSpace(buf)
+		f.writeToken(token.LEXPR)
+		f.writeSpace()
 
-		if err := formatExpr(n.Body, buf); err != nil {
+		if err := f.writeExpr(n.Body); err != nil {
 			return err
 		}
 
-		writeSpace(buf)
-		writeToken(buf, token.REXPR)
+		f.writeSpace()
+		f.writeToken(token.REXPR)
+	// TODO: refactor
+	case *parser.IfNode:
+		f.writeToken(token.LSTMT)
+		f.writeSpace()
+
+		f.writeToken(token.IF)
+		f.writeSpace()
+
+		if err := f.writeExpr(n.IfTag.Expr); err != nil {
+			return err
+		}
+
+		f.writeSpace()
+		f.writeToken(token.RSTMT)
+		f.writeLineBreak()
+
+		for _, node := range n.MainBody {
+			if err := f.writeNode(node); err != nil {
+				return err
+			}
+		}
+
+		for _, elseIf := range n.ElseIfs {
+			f.writeToken(token.LSTMT)
+			f.writeSpace()
+
+			f.writeToken(token.ELSE)
+			f.writeSpace()
+
+			f.writeToken(token.IF)
+			f.writeSpace()
+
+			if err := f.writeExpr(elseIf.ElseIfTag.Expr); err != nil {
+				return err
+			}
+
+			f.writeSpace()
+			f.writeToken(token.RSTMT)
+			f.writeLineBreak()
+			for _, node := range elseIf.Body {
+				if err := f.writeNode(node); err != nil {
+					return err
+				}
+			}
+		}
+
+		if len(n.ElseBody.Body) > 0 {
+			f.writeToken(token.LSTMT)
+			f.writeSpace()
+
+			f.writeToken(token.ELSE)
+			f.writeSpace()
+
+			f.writeToken(token.RSTMT)
+			f.writeLineBreak()
+
+			for _, node := range n.ElseBody.Body {
+				if err := f.writeNode(node); err != nil {
+					return err
+				}
+			}
+		}
+
+		f.writeToken(token.LSTMT)
+		f.writeSpace()
+
+		f.writeToken(token.END)
+		f.writeSpace()
+
+		f.writeToken(token.RSTMT)
+		f.writeLineBreak()
 	default:
 		return fmt.Errorf("unknown node type: %s", n)
 	}
@@ -60,62 +123,62 @@ func formatNode(node parser.Node, indentLevel int, buf *bytes.Buffer) error {
 	return nil
 }
 
-func formatExpr(expr parser.Expr, buf *bytes.Buffer) error {
+func (f *formatter) writeExpr(expr parser.Expr) error {
 	switch nn := expr.(type) {
 	case *parser.StringLit:
-		buf.WriteByte(nn.Quote)
-		buf.WriteString(nn.Value.AsString())
-		buf.WriteByte(nn.Quote)
+		f.buf.WriteByte(nn.Quote)
+		f.buf.WriteString(nn.Value.AsString())
+		f.buf.WriteByte(nn.Quote)
 	case *parser.NumberLit:
-		buf.WriteString(nn.Value.AsString())
+		f.buf.WriteString(nn.Value.AsString())
 	case *parser.ParenExpr:
-		writeToken(buf, token.LPAREN)
-		if err := formatExpr(nn.Expr, buf); err != nil {
+		f.writeToken(token.LPAREN)
+		if err := f.writeExpr(nn.Expr); err != nil {
 			return err
 		}
 
-		writeToken(buf, token.RPAREN)
+		f.writeToken(token.RPAREN)
 	case *parser.UnaryExpr:
-		buf.WriteString(nn.Op.Kind.String())
+		f.buf.WriteString(nn.Op.Kind.String())
 		if nn.Op.Kind.IsOneOfMany(token.NOT) {
-			writeSpace(buf)
+			f.writeSpace()
 		}
 
-		if err := formatExpr(nn.Expr, buf); err != nil {
+		if err := f.writeExpr(nn.Expr); err != nil {
 			return err
 		}
 	case *parser.BinaryExpr:
-		if err := formatExpr(nn.X, buf); err != nil {
+		if err := f.writeExpr(nn.X); err != nil {
 			return err
 		}
 
-		writeSpace(buf)
-		buf.WriteString(nn.Op.Kind.String())
-		writeSpace(buf)
+		f.writeSpace()
+		f.buf.WriteString(nn.Op.Kind.String())
+		f.writeSpace()
 
-		if err := formatExpr(nn.Y, buf); err != nil {
+		if err := f.writeExpr(nn.Y); err != nil {
 			return err
 		}
 	case *parser.Ident:
-		buf.WriteString(nn.Name)
+		f.buf.WriteString(nn.Name)
 	case *parser.TernaryExpr:
-		if err := formatExpr(nn.Condition, buf); err != nil {
+		if err := f.writeExpr(nn.Condition); err != nil {
 			return err
 		}
 
-		writeSpace(buf)
-		buf.WriteString(nn.Do.Kind.String())
-		writeSpace(buf)
+		f.writeSpace()
+		f.buf.WriteString(nn.Do.Kind.String())
+		f.writeSpace()
 
-		if err := formatExpr(nn.TrueExpr, buf); err != nil {
+		if err := f.writeExpr(nn.TrueExpr); err != nil {
 			return err
 		}
 
-		writeSpace(buf)
-		buf.WriteString(nn.Else.Kind.String())
-		writeSpace(buf)
+		f.writeSpace()
+		f.buf.WriteString(nn.Else.Kind.String())
+		f.writeSpace()
 
-		if err := formatExpr(nn.FalseExpr, buf); err != nil {
+		if err := f.writeExpr(nn.FalseExpr); err != nil {
 			return err
 		}
 	default:

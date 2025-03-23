@@ -15,7 +15,7 @@ type testCase struct {
 func runTestCases(t *testing.T, testCases []testCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := formatter.FromBytes([]byte(tc.input))
+			got, err := formatter.Bytes([]byte(tc.input))
 			if err != nil {
 				t.Errorf("Input: %q\nUnexpected error: %v", tc.input, err)
 				return
@@ -36,7 +36,7 @@ type unchangedTestCase struct {
 func runUnchangedTestCases(t *testing.T, testCases []unchangedTestCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := formatter.FromBytes([]byte(tc.input))
+			got, err := formatter.Bytes([]byte(tc.input))
 			if err != nil {
 				t.Errorf("Input: %q\nUnexpected error: %v", tc.input, err)
 				return

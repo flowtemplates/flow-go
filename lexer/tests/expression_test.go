@@ -976,7 +976,7 @@ func TestOperators(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-func TestTernaryOps(t *testing.T) {
+func TestTernary(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:  "Simple ternary",
@@ -1024,6 +1024,42 @@ func TestTernaryOps(t *testing.T) {
 				{Kind: token.ELSE},
 				{Kind: token.WS, Val: " "},
 				{Kind: token.IDENT, Val: "b"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Ternary as value passed in function",
+			input: `{{(flag?"bar":"foo")->camel}}`,
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.LPAREN},
+				{Kind: token.IDENT, Val: "flag"},
+				{Kind: token.QUESTION},
+				{Kind: token.STR, Val: `"bar"`},
+				{Kind: token.COLON},
+				{Kind: token.STR, Val: `"foo"`},
+				{Kind: token.RPAREN},
+				{Kind: token.RARR},
+				{Kind: token.IDENT, Val: "camel"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Nested ternary",
+			input: `{{flag?(var?2:3):2}}`,
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "flag"},
+				{Kind: token.QUESTION},
+				{Kind: token.LPAREN},
+				{Kind: token.IDENT, Val: "var"},
+				{Kind: token.QUESTION},
+				{Kind: token.INT, Val: "2"},
+				{Kind: token.COLON},
+				{Kind: token.INT, Val: "3"},
+				{Kind: token.RPAREN},
+				{Kind: token.COLON},
+				{Kind: token.INT, Val: "2"},
 				{Kind: token.REXPR},
 			},
 		},

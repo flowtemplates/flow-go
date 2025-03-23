@@ -179,7 +179,7 @@ func TestOperators(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-func TestTernaryExpressions(t *testing.T) {
+func TestTernaries(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:        "Simple ternary with true",

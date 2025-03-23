@@ -38,6 +38,33 @@ text
 			},
 		},
 		{
+			name: "If statement with whitespaces after tag",
+			input: `
+{%if var%}  
+text
+{%end%}`[1:],
+			expected: []parser.Node{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
+						StmtTag: parser.StmtTag{
+							PreWs: "",
+						},
+						Expr: &parser.Ident{
+							Name: "var",
+						},
+					},
+					MainBody: []parser.Node{
+						&parser.TextNode{
+							Val: []string{
+								"text",
+								"\n",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:  "Simple one line if statement",
 			input: "{%if var%}text{%end%}",
 			expected: []parser.Node{
@@ -59,7 +86,7 @@ text
 			},
 		},
 		{
-			name: "If statement (with whitespaces)",
+			name: "If statement with extra whitespaces",
 			input: `
 {% if var  %}
 text
@@ -157,6 +184,104 @@ text
 						},
 						&parser.TextNode{
 							Val: []string{"2", "\n"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Simple if-elseif statement",
+			input: `
+{%if bar%}
+1
+{%else if flag%}
+2
+{%end%}`[1:],
+			expected: []parser.Node{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
+							Name: "bar",
+						},
+					},
+					MainBody: []parser.Node{
+						&parser.TextNode{
+							Val: []string{
+								"1",
+								"\n",
+							},
+						},
+					},
+					ElseIfs: []parser.ElseIfNode{
+						{
+							ElseIfTag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "flag",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"2",
+										"\n",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "If-elseif-else statement",
+			input: `
+{%if bar%}
+1
+{%else if flag%}
+2
+{%else%}
+3
+{%end%}`[1:],
+			expected: []parser.Node{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
+							Name: "bar",
+						},
+					},
+					MainBody: []parser.Node{
+						&parser.TextNode{
+							Val: []string{
+								"1",
+								"\n",
+							},
+						},
+					},
+					ElseIfs: []parser.ElseIfNode{
+						{
+							ElseIfTag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "flag",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"2",
+										"\n",
+									},
+								},
+							},
+						},
+					},
+					ElseBody: parser.ElseNode{
+						Body: []parser.Node{
+							&parser.TextNode{
+								Val: []string{
+									"3",
+									"\n",
+								},
+							},
 						},
 					},
 				},

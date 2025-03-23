@@ -914,6 +914,45 @@ func TestTernaries(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "Nested ternaries",
+			input: `{{ flag ? bar ? 1 : 3 : 2 }}`,
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.TernaryExpr{
+						Condition: &parser.Ident{
+							Name: "flag",
+						},
+						Do: parser.Kw{
+							Kind: token.QUESTION,
+						},
+						TrueExpr: &parser.TernaryExpr{
+							Condition: &parser.Ident{
+								Name: "bar",
+							},
+							Do: parser.Kw{
+								Kind: token.QUESTION,
+							},
+							TrueExpr: &parser.NumberLit{
+								Value: value.NumberValue(1),
+							},
+							Else: parser.Kw{
+								Kind: token.COLON,
+							},
+							FalseExpr: &parser.NumberLit{
+								Value: value.NumberValue(3),
+							},
+						},
+						Else: parser.Kw{
+							Kind: token.COLON,
+						},
+						FalseExpr: &parser.NumberLit{
+							Value: value.NumberValue(2),
+						},
+					},
+				},
+			},
+		},
 	}
 	runTestCases(t, testCases)
 }
