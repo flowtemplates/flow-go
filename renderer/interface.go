@@ -1,7 +1,8 @@
 package renderer
 
 import (
-	"github.com/flowtemplates/flow-go/lexer"
+	"fmt"
+
 	"github.com/flowtemplates/flow-go/parser"
 )
 
@@ -18,14 +19,13 @@ func RenderAst(ast []parser.Node, scope Scope) (string, error) {
 
 	context := scopeToContext(scope)
 
-	return render(ast, "", context)
+	return render(ast, context)
 }
 
-func RenderString(input string, scope Scope) (string, error) {
-	tokens := lexer.TokensFromString(input)
-	ast, err := parser.New(tokens).Parse()
+func RenderBytes(input []byte, scope Scope) (string, error) {
+	ast, err := parser.AstFromBytes(input)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ast from string: %w", err)
 	}
 
 	res, err := RenderAst(ast, scope)

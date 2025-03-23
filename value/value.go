@@ -9,9 +9,9 @@ import (
 )
 
 type Valueable interface {
-	String() string
-	Boolean() bool
-	Number() float64
+	AsString() string
+	AsBoolean() bool
+	AsNumber() float64
 	Add(Valueable) Valueable
 	Type() types.Type
 }
@@ -41,15 +41,15 @@ func FromAny(value any) Valueable {
 
 type StringValue string
 
-func (v StringValue) String() string {
+func (v StringValue) AsString() string {
 	return string(v)
 }
 
-func (v StringValue) Boolean() bool {
+func (v StringValue) AsBoolean() bool {
 	return v != ""
 }
 
-func (v StringValue) Number() float64 {
+func (v StringValue) AsNumber() float64 {
 	if num, err := strconv.ParseFloat(string(v), 64); err == nil {
 		return num
 	}
@@ -63,7 +63,7 @@ func (v StringValue) Number() float64 {
 }
 
 func (v StringValue) Add(b Valueable) Valueable {
-	return StringValue(string(v) + b.String())
+	return StringValue(string(v) + b.AsString())
 }
 
 func (v StringValue) Type() types.Type {
@@ -72,15 +72,15 @@ func (v StringValue) Type() types.Type {
 
 type BooleanValue bool
 
-func (v BooleanValue) String() string {
+func (v BooleanValue) AsString() string {
 	return ""
 }
 
-func (v BooleanValue) Boolean() bool {
+func (v BooleanValue) AsBoolean() bool {
 	return bool(v)
 }
 
-func (v BooleanValue) Number() float64 {
+func (v BooleanValue) AsNumber() float64 {
 	if v {
 		return 1
 	}
@@ -91,9 +91,9 @@ func (v BooleanValue) Number() float64 {
 func (v BooleanValue) Add(b Valueable) Valueable {
 	switch b.(type) {
 	case BooleanValue, NumberValue:
-		return NumberValue(v.Number() + b.Number())
+		return NumberValue(v.AsNumber() + b.AsNumber())
 	default:
-		return StringValue(v.String() + b.String())
+		return StringValue(v.AsString() + b.AsString())
 	}
 }
 
@@ -103,7 +103,7 @@ func (v BooleanValue) Type() types.Type {
 
 type NumberValue float64
 
-func (v NumberValue) String() string {
+func (v NumberValue) AsString() string {
 	floatValue := float64(v)
 	if math.Trunc(floatValue) == floatValue {
 		return fmt.Sprintf("%.0f", v)
@@ -112,20 +112,20 @@ func (v NumberValue) String() string {
 	return fmt.Sprintf("%g", v)
 }
 
-func (v NumberValue) Boolean() bool {
+func (v NumberValue) AsBoolean() bool {
 	return v != 0
 }
 
-func (v NumberValue) Number() float64 {
+func (v NumberValue) AsNumber() float64 {
 	return float64(v)
 }
 
 func (v NumberValue) Add(b Valueable) Valueable {
 	switch b.(type) {
 	case BooleanValue, NumberValue:
-		return NumberValue(v.Number() + b.Number())
+		return NumberValue(v.AsNumber() + b.AsNumber())
 	default:
-		return StringValue(v.String() + b.String())
+		return StringValue(v.AsString() + b.AsString())
 	}
 }
 

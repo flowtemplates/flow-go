@@ -5,21 +5,31 @@ import (
 	"github.com/flowtemplates/flow-go/value"
 )
 
-type Node interface{} // nolint: iface
+type Ast []Node
 
-type Expr interface{} // nolint: iface
+type Node interface {
+	node()
+}
 
-type Stmt interface{} // nolint: iface
+type Expr interface {
+	expr()
+}
+
+type Stmt interface {
+	Node
+	stmt()
+}
 
 type (
-	Text struct {
-		Pos token.Position
-		Val []string
+	NumberLit struct {
+		Pos   token.Position
+		Value value.NumberValue
 	}
 
-	Lit struct {
+	StringLit struct {
 		Pos   token.Position
-		Value value.Valueable
+		Quote byte
+		Value value.StringValue
 	}
 
 	Ident struct {
@@ -28,59 +38,59 @@ type (
 	}
 
 	UnaryExpr struct {
-		Op    token.Kind
-		OpPos token.Position
-		X     Expr
+		Op   Kw
+		Expr Expr
 	}
 
 	BinaryExpr struct {
-		X     Expr
-		Op    token.Kind
-		OpPos token.Position
-		Y     Expr
+		X  Expr
+		Op Kw
+		Y  Expr
 	}
 
 	TernaryExpr struct {
 		Condition Expr
-		Do        token.Kind
-		DoPos     token.Position
+		Do        Kw
 		TrueExpr  Expr
-		Else      token.Kind
-		ElsePos   token.Position
+		Else      Kw
 		FalseExpr Expr
+	}
+
+	Kw struct {
+		Kind token.Kind
+		Pos  token.Position
+	}
+
+	ParenExpr struct {
+		Lparen token.Position
+		Rparen token.Position
+		Expr
 	}
 
 	StmtTag struct {
 		PreWs string
-		LStmt token.Position
-		Kw    token.Kind
-		KwPos token.Position
-		RStmt token.Position
+		// LStmt token.Position
+		// RStmt token.Position
+	}
+
+	StmtTagWithKw struct {
+		StmtTag
+		Kw
 	}
 
 	StmtTagWithExpr struct {
 		StmtTag
-		Body Expr
+		Expr
 	}
 
-	ExprBlock struct {
-		LBrace token.Position
-		Body   Expr
-		RBrace token.Position
+	ElseIfNode struct {
+		ElseIfTag StmtTagWithExpr
+		Body      []Node
 	}
 
-	IfStmt struct {
-		BegTag      StmtTagWithExpr
-		Body        []Node
-		Else        []Node
-		PreEndTagWs string
-	}
-
-	SwitchStmt struct {
-		BegTag      StmtTagWithExpr
-		Cases       []CaseClause
-		DefaultCase []Node
-		PreEndTagWs string
+	ElseNode struct {
+		ElseTag StmtTag
+		Body    []Node
 	}
 
 	CaseClause struct {
@@ -88,3 +98,67 @@ type (
 		Body    []Node
 	}
 )
+
+// Nodes
+type (
+	CommNode struct {
+		PreWs  string
+		Pos    token.Position
+		Val    string
+		PostLB string
+	}
+
+	TextNode struct {
+		Pos token.Position
+		Val []string
+	}
+
+	ExprNode struct {
+		// LBrace token.Position
+		Body Expr
+		// RBrace token.Position
+	}
+
+	StmtNode struct {
+		StmtTagWithKw
+		Expr
+	}
+
+	IfNode struct {
+		IfTag    StmtTagWithExpr
+		MainBody []Node
+		ElseIfs  []ElseIfNode
+		ElseBody ElseNode
+		EndTag   StmtTag
+	}
+
+	SwitchNode struct {
+		SwitchTag   StmtTagWithExpr
+		Cases       []CaseClause
+		DefaultCase []Node
+		EndTag      StmtTag
+	}
+)
+
+func (*CommNode) node()   {}
+func (*TextNode) node()   {}
+func (*ExprNode) node()   {}
+func (*StmtNode) node()   {}
+func (*IfNode) node()     {}
+func (*SwitchNode) node() {}
+
+// exprNode() ensures that only expression/type nodes can be
+// assigned to an Expr.
+func (*NumberLit) expr()   {}
+func (*StringLit) expr()   {}
+func (*Ident) expr()       {}
+func (*UnaryExpr) expr()   {}
+func (*BinaryExpr) expr()  {}
+func (*TernaryExpr) expr() {}
+func (*ParenExpr) expr()   {}
+
+// stmtNode() ensures that only statement nodes can be
+// assigned to a Stmt.
+func (*IfNode) stmt()          {}
+func (*StmtTagWithExpr) stmt() {}
+func (*SwitchNode) stmt()      {}

@@ -193,6 +193,14 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			},
 		},
 		{
+			name:  "Expression with wrong opening bracket",
+			input: "{ {user}}",
+			expected: []token.Token{
+				{Kind: token.TEXT, Val: "{ {user"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
 			name:  "Var name with leading digit",
 			input: "{{1user}}",
 			expected: []token.Token{
@@ -225,6 +233,42 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			},
 		},
 		{
+			name:  "Ident starting with 'is' keyword",
+			input: "{{is123}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "is123"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Ident starting with 'end' keyword",
+			input: "{{end123}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "end123"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Ident ending with 'not' keyword",
+			input: "{{hellonot}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "hellonot"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Keyword 'and' as ident name",
+			input: "{{and}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.AND},
+				{Kind: token.REXPR},
+			},
+		},
+		{
 			name: "Line break inside expression",
 			input: `
 {{greeting
@@ -243,6 +287,28 @@ func TestExpressionsEdgeCases(t *testing.T) {
 				{Kind: token.TEXT, Val: "Hello, "},
 				{Kind: token.LEXPR},
 				{Kind: token.IDENT, Val: "name"},
+			},
+		},
+		{
+			name:  "Expression with open statement inside",
+			input: "{{ {% }}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.LSTMT},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.REXPR},
+			},
+		},
+		{
+			name:  "Expression with close statement inside",
+			input: "{{ %} }}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.RSTMT},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.REXPR},
 			},
 		},
 		{

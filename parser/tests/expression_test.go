@@ -14,7 +14,7 @@ func TestExpressions(t *testing.T) {
 			name:  "Plain text",
 			input: "hello",
 			expected: []parser.Node{
-				parser.Text{
+				&parser.TextNode{
 					Val: []string{"hello"},
 				},
 			},
@@ -23,8 +23,41 @@ func TestExpressions(t *testing.T) {
 			name:  "Single expression with var",
 			input: "{{x}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
+				&parser.ExprNode{
 					Body: &parser.Ident{Name: "x"},
+				},
+			},
+		},
+		{
+			name:  "Int literal",
+			input: "{{1}}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.NumberLit{
+						Value: value.NumberValue(1),
+					},
+				},
+			},
+		},
+		{
+			name:  "Negative int literal",
+			input: "{{-1}}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.NumberLit{
+						Value: value.NumberValue(-1),
+					},
+				},
+			},
+		},
+		{
+			name:  "Float literal",
+			input: "{{1.1}}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.NumberLit{
+						Value: value.NumberValue(1.1),
+					},
 				},
 			},
 		},
@@ -32,7 +65,7 @@ func TestExpressions(t *testing.T) {
 			name:  "Whitespaces with var",
 			input: "{{ x }}",
 			expected: []parser.Node{
-				parser.ExprBlock{
+				&parser.ExprNode{
 					Body: &parser.Ident{
 						Name: "x",
 					},
@@ -43,19 +76,19 @@ func TestExpressions(t *testing.T) {
 			name:  "Expressions between text",
 			input: "Hello, {{name}}\n{{var }}Text",
 			expected: []parser.Node{
-				parser.Text{
+				&parser.TextNode{
 					Val: []string{"Hello, "},
 				},
-				parser.ExprBlock{
+				&parser.ExprNode{
 					Body: &parser.Ident{Name: "name"},
 				},
-				parser.Text{
+				&parser.TextNode{
 					Val: []string{"\n"},
 				},
-				parser.ExprBlock{
+				&parser.ExprNode{
 					Body: &parser.Ident{Name: "var"},
 				},
-				parser.Text{
+				&parser.TextNode{
 					Val: []string{"Text"},
 				},
 			},
@@ -186,9 +219,11 @@ func TestExpressions(t *testing.T) {
 			name:  "Redundant parens",
 			input: "{{(age)}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: &parser.Ident{
-						Name: "age",
+				&parser.ExprNode{
+					Body: &parser.ParenExpr{
+						Expr: &parser.Ident{
+							Name: "age",
+						},
 					},
 				},
 			},
@@ -291,8 +326,11 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			name:     "Expression interrupted with EOF",
 			input:    "{{",
 			expected: []parser.Node{},
-			errExpected: parser.ExpectedTokensError{
-				Tokens: []token.Kind{token.REXPR},
+			// errExpected: parser.ExpectedTokensError{
+			// 	Tokens: []token.Kind{token.REXPR},
+			// },
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
 			},
 		},
 		{
@@ -302,21 +340,70 @@ func TestExpressionsEdgeCases(t *testing.T) {
 			errExpected: parser.ExpectedTokensError{
 				Tokens: []token.Kind{token.REXPR},
 			},
+			// errExpected: parser.Error{
+			// 	Typ: parser.ErrExpressionExpected,
+			// },
 		},
 		{
 			name:     "Expression interrupted with line break",
 			input:    "{{\n",
 			expected: []parser.Node{},
-			errExpected: parser.ExpectedTokensError{
-				Tokens: []token.Kind{token.REXPR},
+			// errExpected: parser.ExpectedTokensError{
+			// 	Tokens: []token.Kind{token.REXPR},
+			// },
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
 			},
 		},
 		{
 			name:     "Expression interrupted with line break with text and expression after",
 			input:    "{{\nText{{1}}",
 			expected: []parser.Node{},
-			errExpected: parser.ExpectedTokensError{
-				Tokens: []token.Kind{token.REXPR},
+			// errExpected: parser.ExpectedTokensError{
+			// 	Tokens: []token.Kind{token.REXPR},
+			// },
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		{
+			name:     "Expression with open statement",
+			input:    "{{ {% }}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		{
+			name:     "Expression with statement",
+			input:    "{{ {%%} }}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		{
+			name:     "Expression with closing statement",
+			input:    "{{ %} }}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		{
+			name:     "Expression with closing comment",
+			input:    "{{ #} }}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
+			},
+		},
+		{
+			name:     "Keyword 'and' as ident name",
+			input:    "{{and}}",
+			expected: []parser.Node{},
+			errExpected: parser.Error{
+				Typ: parser.ErrExpressionExpected,
 			},
 		},
 	}
@@ -329,13 +416,17 @@ func TestOperators(t *testing.T) {
 			name:  "String literals equal",
 			input: `{{"a"=="b"}}`,
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Lit{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.StringLit{
+							Quote: '"',
 							Value: value.StringValue("a"),
 						},
-						Op: token.EQL,
-						Y: parser.Lit{
+						Op: parser.Kw{
+							Kind: token.EQL,
+						},
+						Y: &parser.StringLit{
+							Quote: '"',
 							Value: value.StringValue("b"),
 						},
 					},
@@ -346,13 +437,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars equal (==)",
 			input: "{{a==b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.EQL,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.EQL,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -363,13 +456,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars is",
 			input: "{{a is b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.IS,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.IS,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -380,13 +475,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars is not",
 			input: "{{a is not b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.ISNOT,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.ISNOT,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -397,13 +494,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars not equal (!=)",
 			input: "{{a!=b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.NEQL,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.NEQL,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -414,10 +513,12 @@ func TestOperators(t *testing.T) {
 			name:  "Vars not",
 			input: "{{not flag}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.UnaryExpr{
-						Op: token.NOT,
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.UnaryExpr{
+						Op: parser.Kw{
+							Kind: token.NOT,
+						},
+						Expr: &parser.Ident{
 							Name: "flag",
 						},
 					},
@@ -428,10 +529,12 @@ func TestOperators(t *testing.T) {
 			name:  "Vars not (!)",
 			input: "{{!flag}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.UnaryExpr{
-						Op: token.EXCL,
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.UnaryExpr{
+						Op: parser.Kw{
+							Kind: token.EXCL,
+						},
+						Expr: &parser.Ident{
 							Name: "flag",
 						},
 					},
@@ -442,13 +545,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars and (&&)",
 			input: "{{a&&b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.LAND,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.LAND,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -459,13 +564,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars or (||)",
 			input: "{{a||b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.LOR,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.LOR,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -476,13 +583,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars and",
 			input: "{{a and b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.AND,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.AND,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -493,13 +602,15 @@ func TestOperators(t *testing.T) {
 			name:  "Vars or",
 			input: "{{a or b}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.OR,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.OR,
+						},
+						Y: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -510,19 +621,23 @@ func TestOperators(t *testing.T) {
 			name:  "Multiple ||",
 			input: "{{a||b||c}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.BinaryExpr{
-							X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.BinaryExpr{
+							X: &parser.Ident{
 								Name: "a",
 							},
-							Op: token.LOR,
-							Y: parser.Ident{
+							Op: parser.Kw{
+								Kind: token.LOR,
+							},
+							Y: &parser.Ident{
 								Name: "b",
 							},
 						},
-						Op: token.LOR,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.LOR,
+						},
+						Y: &parser.Ident{
 							Name: "c",
 						},
 					},
@@ -533,19 +648,23 @@ func TestOperators(t *testing.T) {
 			name:  "Multiple &&",
 			input: "{{a&&b&&c}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.BinaryExpr{
-							X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.BinaryExpr{
+							X: &parser.Ident{
 								Name: "a",
 							},
-							Op: token.LAND,
-							Y: parser.Ident{
+							Op: parser.Kw{
+								Kind: token.LAND,
+							},
+							Y: &parser.Ident{
 								Name: "b",
 							},
 						},
-						Op: token.LAND,
-						Y: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.LAND,
+						},
+						Y: &parser.Ident{
 							Name: "c",
 						},
 					},
@@ -556,18 +675,22 @@ func TestOperators(t *testing.T) {
 			name:  "And precedence over or",
 			input: "{{a or b and c}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "a",
 						},
-						Op: token.OR,
-						Y: parser.BinaryExpr{
-							X: parser.Ident{
+						Op: parser.Kw{
+							Kind: token.OR,
+						},
+						Y: &parser.BinaryExpr{
+							X: &parser.Ident{
 								Name: "b",
 							},
-							Op: token.AND,
-							Y: parser.Ident{
+							Op: parser.Kw{
+								Kind: token.AND,
+							},
+							Y: &parser.Ident{
 								Name: "c",
 							},
 						},
@@ -579,15 +702,21 @@ func TestOperators(t *testing.T) {
 			name:  "Parens changing precedence 1",
 			input: "{{(a or b) and c}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.BinaryExpr{
-							X:  parser.Ident{Name: "a"},
-							Op: token.OR,
-							Y:  parser.Ident{Name: "b"},
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.ParenExpr{
+							Expr: &parser.BinaryExpr{
+								X: &parser.Ident{Name: "a"},
+								Op: parser.Kw{
+									Kind: token.OR,
+								},
+								Y: &parser.Ident{Name: "b"},
+							},
 						},
-						Op: token.AND,
-						Y:  parser.Ident{Name: "c"},
+						Op: parser.Kw{
+							Kind: token.AND,
+						},
+						Y: &parser.Ident{Name: "c"},
 					},
 				},
 			},
@@ -596,14 +725,20 @@ func TestOperators(t *testing.T) {
 			name:  "Parens changing precedence 2",
 			input: "{{a and (b or c)}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X:  parser.Ident{Name: "a"},
-						Op: token.AND,
-						Y: parser.BinaryExpr{
-							X:  parser.Ident{Name: "b"},
-							Op: token.OR,
-							Y:  parser.Ident{Name: "c"},
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.Ident{Name: "a"},
+						Op: parser.Kw{
+							Kind: token.AND,
+						},
+						Y: &parser.ParenExpr{
+							Expr: &parser.BinaryExpr{
+								X: &parser.Ident{Name: "b"},
+								Op: parser.Kw{
+									Kind: token.OR,
+								},
+								Y: &parser.Ident{Name: "c"},
+							},
 						},
 					},
 				},
@@ -613,19 +748,29 @@ func TestOperators(t *testing.T) {
 			name:  "Nested parens",
 			input: "{{((a or b) and c) or d}}",
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.BinaryExpr{
-						X: parser.BinaryExpr{
-							X: parser.BinaryExpr{
-								X:  parser.Ident{Name: "a"},
-								Op: token.OR,
-								Y:  parser.Ident{Name: "b"},
+				&parser.ExprNode{
+					Body: &parser.BinaryExpr{
+						X: &parser.ParenExpr{
+							Expr: &parser.BinaryExpr{
+								X: &parser.ParenExpr{
+									Expr: &parser.BinaryExpr{
+										X: &parser.Ident{Name: "a"},
+										Op: parser.Kw{
+											Kind: token.OR,
+										},
+										Y: &parser.Ident{Name: "b"},
+									},
+								},
+								Op: parser.Kw{
+									Kind: token.AND,
+								},
+								Y: &parser.Ident{Name: "c"},
 							},
-							Op: token.AND,
-							Y:  parser.Ident{Name: "c"},
 						},
-						Op: token.OR,
-						Y:  parser.Ident{Name: "d"},
+						Op: parser.Kw{
+							Kind: token.OR,
+						},
+						Y: &parser.Ident{Name: "d"},
 					},
 				},
 			},
@@ -640,17 +785,21 @@ func TestTernaries(t *testing.T) {
 			name:  "Simple ternary",
 			input: `{{flag?1:2}}`,
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.TernaryExpr{
-						Condition: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.TernaryExpr{
+						Condition: &parser.Ident{
 							Name: "flag",
 						},
-						Do: token.QUESTION,
-						TrueExpr: parser.Lit{
+						Do: parser.Kw{
+							Kind: token.QUESTION,
+						},
+						TrueExpr: &parser.NumberLit{
 							Value: value.NumberValue(1),
 						},
-						Else: token.COLON,
-						FalseExpr: parser.Lit{
+						Else: parser.Kw{
+							Kind: token.COLON,
+						},
+						FalseExpr: &parser.NumberLit{
 							Value: value.NumberValue(2),
 						},
 					},
@@ -661,17 +810,21 @@ func TestTernaries(t *testing.T) {
 			name:  "Simple do-else ternary",
 			input: `{{flag do a else b}}`,
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.TernaryExpr{
-						Condition: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.TernaryExpr{
+						Condition: &parser.Ident{
 							Name: "flag",
 						},
-						Do: token.DO,
-						TrueExpr: parser.Ident{
+						Do: parser.Kw{
+							Kind: token.DO,
+						},
+						TrueExpr: &parser.Ident{
 							Name: "a",
 						},
-						Else: token.ELSE,
-						FalseExpr: parser.Ident{
+						Else: parser.Kw{
+							Kind: token.ELSE,
+						},
+						FalseExpr: &parser.Ident{
 							Name: "b",
 						},
 					},
@@ -682,23 +835,29 @@ func TestTernaries(t *testing.T) {
 			name:  "Ternary with equality condition",
 			input: `{{flag==3?1:2}}`,
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.TernaryExpr{
-						Condition: parser.BinaryExpr{
-							X: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.TernaryExpr{
+						Condition: &parser.BinaryExpr{
+							X: &parser.Ident{
 								Name: "flag",
 							},
-							Op: token.EQL,
-							Y: parser.Lit{
+							Op: parser.Kw{
+								Kind: token.EQL,
+							},
+							Y: &parser.NumberLit{
 								Value: value.NumberValue(3),
 							},
 						},
-						Do: token.QUESTION,
-						TrueExpr: parser.Lit{
+						Do: parser.Kw{
+							Kind: token.QUESTION,
+						},
+						TrueExpr: &parser.NumberLit{
 							Value: value.NumberValue(1),
 						},
-						Else: token.COLON,
-						FalseExpr: parser.Lit{
+						Else: parser.Kw{
+							Kind: token.COLON,
+						},
+						FalseExpr: &parser.NumberLit{
 							Value: value.NumberValue(2),
 						},
 					},
@@ -709,17 +868,21 @@ func TestTernaries(t *testing.T) {
 			name:  "Ternary with whitespaces",
 			input: `{{ flag ? 1 : 2 }}`,
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.TernaryExpr{
-						Condition: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.TernaryExpr{
+						Condition: &parser.Ident{
 							Name: "flag",
 						},
-						Do: token.QUESTION,
-						TrueExpr: parser.Lit{
+						Do: parser.Kw{
+							Kind: token.QUESTION,
+						},
+						TrueExpr: &parser.NumberLit{
 							Value: value.NumberValue(1),
 						},
-						Else: token.COLON,
-						FalseExpr: parser.Lit{
+						Else: parser.Kw{
+							Kind: token.COLON,
+						},
+						FalseExpr: &parser.NumberLit{
 							Value: value.NumberValue(2),
 						},
 					},
@@ -730,17 +893,21 @@ func TestTernaries(t *testing.T) {
 			name:  "Ternary with vars",
 			input: `{{flag?name:age}}`,
 			expected: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.TernaryExpr{
-						Condition: parser.Ident{
+				&parser.ExprNode{
+					Body: &parser.TernaryExpr{
+						Condition: &parser.Ident{
 							Name: "flag",
 						},
-						Do: token.QUESTION,
-						TrueExpr: parser.Ident{
+						Do: parser.Kw{
+							Kind: token.QUESTION,
+						},
+						TrueExpr: &parser.Ident{
 							Name: "name",
 						},
-						Else: token.COLON,
-						FalseExpr: parser.Ident{
+						Else: parser.Kw{
+							Kind: token.COLON,
+						},
+						FalseExpr: &parser.Ident{
 							Name: "age",
 						},
 					},

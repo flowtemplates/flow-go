@@ -79,6 +79,43 @@ func TestCommentsEdgeCases(t *testing.T) {
 				{Kind: token.COMM_TEXT, Val: " Some content"},
 			},
 		},
+		{
+			name:  "Comment with expression inside",
+			input: "{#{{}}#}",
+			expected: []token.Token{
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: "{{}}"},
+				{Kind: token.RCOMM},
+			},
+		},
+		{
+			name:  "Comment with statement inside",
+			input: "{#{%%}#}",
+			expected: []token.Token{
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: "{%%}"},
+				{Kind: token.RCOMM},
+			},
+		},
+		{
+			name:  "Unclosed comment with statement inside",
+			input: "{#{%%}",
+			expected: []token.Token{
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: "{%%}"},
+			},
+		},
+		{
+			name: "Unclosed multiline comment with statement inside",
+			input: `
+{#
+{%if%}
+`[1:],
+			expected: []token.Token{
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: "\n{%if%}\n"},
+			},
+		},
 	}
 	runTestCases(t, testCases)
 }

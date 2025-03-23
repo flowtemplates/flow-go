@@ -6,71 +6,30 @@ import (
 
 const eof = 0
 
-type Lexer struct {
-	input  string
-	start  token.Position
-	pos    token.Position
-	tokens chan token.Token
-}
-
-func FromString(input string) *Lexer {
-	l := &Lexer{
-		input: input,
-		start: token.Position{
-			Offset: 0,
-			Line:   1,
-			Column: 1,
-		},
-		tokens: make(chan token.Token, 2),
-	}
-	l.pos = l.start
-
-	go l.run()
-	return l
-}
-
-func TokensFromString(input string) []token.Token {
-	l := FromString(input)
-	var tokens []token.Token
-	for {
-		tok := l.NextToken()
-		if tok.Kind == token.EOF {
-			break
-		}
-		tokens = append(tokens, tok)
-	}
-
-	return tokens
-}
-
-func (l *Lexer) emit(t token.Kind) {
-	if l.start.Offset < l.pos.Offset {
-		l.tokens <- token.Token{
+func (l *lexer) emit(t token.Kind) {
+	if l.startPos.Offset < l.pos.Offset {
+		l.tokensCh <- token.Token{
 			Kind: t,
-			Val:  l.input[l.start.Offset:l.pos.Offset],
-			Pos:  l.start,
+			Val:  string(l.source[l.startPos.Offset:l.pos.Offset]),
+			Pos:  l.startPos,
 		}
-		l.start = l.pos
+		l.startPos = l.pos
 	}
 }
 
-func (l *Lexer) NextToken() token.Token {
-	return <-l.tokens
-}
-
-func (l *Lexer) run() {
+func (l *lexer) run() {
 	for state := lexLineWhitespace(lexText); state != nil; {
 		state = state(l)
 	}
-	close(l.tokens)
+	close(l.tokensCh)
 }
 
-func (l *Lexer) next() rune {
-	if l.pos.Offset >= len(l.input) {
+func (l *lexer) next() rune {
+	if l.pos.Offset >= len(l.source) {
 		return eof
 	}
 
-	r := rune(l.input[l.pos.Offset])
+	r := rune(l.source[l.pos.Offset])
 	l.pos.Offset++
 
 	// Handle newline properly
@@ -84,17 +43,17 @@ func (l *Lexer) next() rune {
 	return r
 }
 
-func (l *Lexer) back() {
+func (l *lexer) back() {
 	if l.pos.Offset <= 0 {
 		return
 	}
 
 	l.pos.Offset--
-	if l.input[l.pos.Offset] == '\n' {
+	if l.source[l.pos.Offset] == '\n' {
 		l.pos.Line-- // Move back a line
 		// Find previous line start to restore column correctly
 		l.pos.Column = 1
-		for i := l.pos.Offset - 1; i >= 0 && l.input[i] != '\n'; i-- {
+		for i := l.pos.Offset - 1; i >= 0 && l.source[i] != '\n'; i-- {
 			l.pos.Column++
 		}
 	} else {
@@ -102,15 +61,15 @@ func (l *Lexer) back() {
 	}
 }
 
-func (l *Lexer) peek() rune {
-	if l.pos.Offset < len(l.input) {
-		r := rune(l.input[l.pos.Offset])
+func (l *lexer) peek() rune {
+	if l.pos.Offset < len(l.source) {
+		r := rune(l.source[l.pos.Offset])
 		return r
 	}
 	return eof
 }
 
-func (l *Lexer) accept(valid string) bool {
+func (l *lexer) accept(valid string) bool {
 	r := l.next()
 	for _, c := range valid {
 		if c == r {
@@ -122,7 +81,7 @@ func (l *Lexer) accept(valid string) bool {
 	return false
 }
 
-func (l *Lexer) acceptRun(valid string) {
+func (l *lexer) acceptRun(valid string) {
 	for l.accept(valid) {
 	}
 }

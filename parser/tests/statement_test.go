@@ -17,46 +17,44 @@ func TestIfStatements(t *testing.T) {
 text
 {%end%}`[1:],
 			expected: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
-							Kw: token.IF,
+							PreWs: "",
 						},
-						Body: parser.Ident{
+						Expr: &parser.Ident{
 							Name: "var",
 						},
 					},
-					Body: []parser.Node{
-						parser.Text{
+					MainBody: []parser.Node{
+						&parser.TextNode{
 							Val: []string{
 								"text",
 								"\n",
 							},
 						},
 					},
-					Else: nil,
 				},
 			},
 		},
 		{
-			name:  "Simple if statement in one line",
+			name:  "Simple one line if statement",
 			input: "{%if var%}text{%end%}",
 			expected: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
-							Kw: token.IF,
+							PreWs: "",
 						},
-						Body: parser.Ident{
+						Expr: &parser.Ident{
 							Name: "var",
 						},
 					},
-					Body: []parser.Node{
-						parser.Text{
+					MainBody: []parser.Node{
+						&parser.TextNode{
 							Val: []string{"text"},
 						},
 					},
-					Else: nil,
 				},
 			},
 		},
@@ -67,24 +65,23 @@ text
 text
 {% end %}`[1:],
 			expected: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
-							Kw: token.IF,
+							PreWs: "",
 						},
-						Body: parser.Ident{
+						Expr: &parser.Ident{
 							Name: "var",
 						},
 					},
-					Body: []parser.Node{
-						parser.Text{
+					MainBody: []parser.Node{
+						&parser.TextNode{
 							Val: []string{
 								"text",
 								"\n",
 							},
 						},
 					},
-					Else: nil,
 				},
 			},
 		},
@@ -95,18 +92,17 @@ text
 	text
 	{%end%}`[1:],
 			expected: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
 							PreWs: "\t",
-							Kw:    token.IF,
 						},
-						Body: parser.Ident{
+						Expr: &parser.Ident{
 							Name: "var",
 						},
 					},
-					Body: []parser.Node{
-						parser.Text{
+					MainBody: []parser.Node{
+						&parser.TextNode{
 							Val: []string{
 								"\t",
 								"text",
@@ -114,8 +110,9 @@ text
 							},
 						},
 					},
-					Else:        nil,
-					PreEndTagWs: "\t",
+					EndTag: parser.StmtTag{
+						PreWs: "\t",
+					},
 				},
 			},
 		},
@@ -130,39 +127,38 @@ text
 2
 {%end%}`[1:],
 			expected: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
-							Kw: token.IF,
+							PreWs: "",
 						},
-						Body: parser.Ident{
+						Expr: &parser.Ident{
 							Name: "var",
 						},
 					},
-					Body: []parser.Node{
-						parser.Text{
+					MainBody: []parser.Node{
+						&parser.TextNode{
 							Val: []string{"1", "\n"},
 						},
-						parser.IfStmt{
-							BegTag: parser.StmtTagWithExpr{
+						&parser.IfNode{
+							IfTag: parser.StmtTagWithExpr{
 								StmtTag: parser.StmtTag{
-									Kw: token.IF,
+									PreWs: "",
 								},
-								Body: parser.Ident{
+								Expr: &parser.Ident{
 									Name: "name",
 								},
 							},
-							Body: []parser.Node{
-								parser.Text{
+							MainBody: []parser.Node{
+								&parser.TextNode{
 									Val: []string{"text", "\n"},
 								},
 							},
 						},
-						parser.Text{
+						&parser.TextNode{
 							Val: []string{"2", "\n"},
 						},
 					},
-					Else: nil,
 				},
 			},
 		},
@@ -180,6 +176,14 @@ func TestIfStatementsEdgeCases(t *testing.T) {
 				Typ: parser.ErrEndExpected,
 			},
 		},
+		// {
+		// 	name:     "Empty condition if statement",
+		// 	input:    "{%if %}{%end%}",
+		// 	expected: []parser.Node{},
+		// 	errExpected: parser.Error{
+		// 		Typ: parser.ErrEndExpected,
+		// 	},
+		// },
 		{
 			name: "If statement with body without end tag",
 			input: `
@@ -232,6 +236,39 @@ Some {{text}}`[1:],
 				Tokens: []token.Kind{token.RSTMT},
 			},
 		},
+		{
+			name: "If statement with text in front",
+			input: `
+Text{%if var%}
+123
+{% end %}`[1:],
+			expected: []parser.Node{
+				&parser.TextNode{
+					Val: []string{"Text"},
+				},
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
+						StmtTag: parser.StmtTag{
+							PreWs: "",
+						},
+						Expr: &parser.Ident{
+							Name: "var",
+						},
+					},
+					MainBody: []parser.Node{
+						&parser.TextNode{
+							Val: []string{
+								"123",
+								"\n",
+							},
+						},
+					},
+				},
+			},
+			// errExpected: parser.Error{
+			// 	Typ: parser.ErrUnexpectedBeforeStmt,
+			// },
+		},
 	}
 	runTestCases(t, testCases)
 }
@@ -242,11 +279,16 @@ func TestGenIfStatements(t *testing.T) {
 			name:  "Simple genif",
 			input: "{%genif var%}",
 			expected: []parser.Node{
-				parser.StmtTagWithExpr{
-					StmtTag: parser.StmtTag{
-						Kw: token.GENIF,
+				&parser.StmtNode{
+					StmtTagWithKw: parser.StmtTagWithKw{
+						StmtTag: parser.StmtTag{
+							PreWs: "",
+						},
+						Kw: parser.Kw{
+							Kind: token.GENIF,
+						},
 					},
-					Body: parser.Ident{
+					Expr: &parser.Ident{
 						Name: "var",
 					},
 				},
@@ -256,16 +298,23 @@ func TestGenIfStatements(t *testing.T) {
 			name:  "Genif with equality",
 			input: "{%genif var == 2%}",
 			expected: []parser.Node{
-				parser.StmtTagWithExpr{
-					StmtTag: parser.StmtTag{
-						Kw: token.GENIF,
+				&parser.StmtNode{
+					StmtTagWithKw: parser.StmtTagWithKw{
+						StmtTag: parser.StmtTag{
+							PreWs: "",
+						},
+						Kw: parser.Kw{
+							Kind: token.GENIF,
+						},
 					},
-					Body: parser.BinaryExpr{
-						X: parser.Ident{
+					Expr: &parser.BinaryExpr{
+						X: &parser.Ident{
 							Name: "var",
 						},
-						Op: token.EQL,
-						Y: parser.Lit{
+						Op: parser.Kw{
+							Kind: token.EQL,
+						},
+						Y: &parser.NumberLit{
 							Value: value.NumberValue(2),
 						},
 					},

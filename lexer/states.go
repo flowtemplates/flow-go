@@ -1,15 +1,15 @@
 package lexer
 
 import (
-	"strings"
+	"bytes"
 	"unicode"
 
 	"github.com/flowtemplates/flow-go/token"
 )
 
-type stateFn func(*Lexer) stateFn
+type stateFn func(*lexer) stateFn
 
-func (l *Lexer) lexToken(t token.Kind, next stateFn) stateFn {
+func (l *lexer) lexToken(t token.Kind, next stateFn) stateFn {
 	tokLen := len(token.TokenString(t))
 	l.pos.Offset += tokLen
 	l.pos.Column += tokLen
@@ -17,26 +17,53 @@ func (l *Lexer) lexToken(t token.Kind, next stateFn) stateFn {
 	return next
 }
 
-func (l *Lexer) startsWith(t token.Kind) bool {
-	tokString := token.TokenString(t)
-	if tokString != "" {
-		return strings.HasPrefix(l.input[l.pos.Offset:], tokString)
+func (l *lexer) startsWith(t token.Kind) bool {
+	tokBytes := token.TokenBytes(t)
+	if len(tokBytes) > 0 {
+		return bytes.HasPrefix(l.source[l.pos.Offset:], tokBytes)
 	}
 
 	return false
 }
 
-func (l *Lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
-	for _, token := range tokens {
-		if l.startsWith(token) {
-			return l.lexToken(token, nextState)
+func (l *lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
+	for _, t := range tokens {
+		if l.startsWith(t) {
+			return l.lexToken(t, nextState)
 		}
 	}
 
 	return nil
 }
 
-func lexText(l *Lexer) stateFn {
+// TODO: rewrite this whole CRAP
+func (l *lexer) tryKeywords(nextState stateFn) stateFn {
+	a := l.source[l.pos.Offset:]
+	for _, tok := range token.GetKeywords() {
+		tokBytes := token.TokenBytes(tok)
+		if len(tokBytes) > 0 && bytes.HasPrefix(a, tokBytes) {
+			if len(l.source) < l.pos.Offset+len(tokBytes)+1 {
+				return l.lexToken(tok, nextState)
+			}
+
+			if unicode.IsSpace(rune(l.source[l.pos.Offset+len(tokBytes)])) {
+				return l.lexToken(tok, nextState)
+			}
+
+			b := l.source[l.pos.Offset+len(tokBytes):]
+			for _, tok2 := range token.GetOperators() {
+				tokBytes2 := token.TokenBytes(tok2)
+				if len(tokBytes2) > 0 && bytes.HasPrefix(b, tokBytes2) {
+					return l.lexToken(tok, nextState)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func lexText(l *lexer) stateFn {
 	for {
 		r := l.peek()
 		if r == eof {
@@ -77,12 +104,12 @@ func lexText(l *Lexer) stateFn {
 
 		if l.startsWith(token.REXPR) {
 			l.emit(token.TEXT)
-			return l.lexToken(token.REXPR, lexLineWhitespace(lexText))
+			return l.lexToken(token.REXPR, lexText)
 		}
 
 		if l.startsWith(token.RCOMM) {
 			l.emit(token.TEXT)
-			return l.lexToken(token.RCOMM, lexText)
+			return l.lexToken(token.RCOMM, lexLineWhitespace(lexText))
 		}
 
 		if l.startsWith(token.RSTMT) {
@@ -96,7 +123,7 @@ func lexText(l *Lexer) stateFn {
 
 // TODO: rename
 func lexRealExpr(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		r := l.next()
 
 		if r == eof {
@@ -134,31 +161,28 @@ func lexRealExpr(nextState stateFn) stateFn {
 	}
 }
 
-func lexExpr(l *Lexer) stateFn {
+func lexExpr(l *lexer) stateFn {
 	if l.startsWith(token.REXPR) {
 		return l.lexToken(token.REXPR, lexText)
 	}
 
-	if state := l.tryTokens(lexExpr, append(token.GetOperators(),
-		token.NOT,
-		token.AND,
-		token.DO,
-		token.ELSE,
-		token.OR,
-		token.IS,
-	)...); state != nil {
+	if state := l.tryTokens(lexExpr, token.GetOperators()...); state != nil {
+		return state
+	}
+
+	if state := l.tryKeywords(lexExpr); state != nil {
 		return state
 	}
 
 	return lexRealExpr(lexExpr)
 }
 
-func lexComm(l *Lexer) stateFn {
+func lexComm(l *lexer) stateFn {
 	// ? try to lex something to do not cause commenting whole thing if there is no closing tag
 	for {
 		if l.startsWith(token.RCOMM) {
 			l.emit(token.COMM_TEXT)
-			return l.lexToken(token.RCOMM, lexText)
+			return l.lexToken(token.RCOMM, lexLineWhitespace(lexText))
 		}
 
 		r := l.next()
@@ -170,7 +194,7 @@ func lexComm(l *Lexer) stateFn {
 }
 
 func lexNum(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		digits := "0123456789"
 
 		l.acceptRun(digits)
@@ -185,7 +209,7 @@ func lexNum(nextState stateFn) stateFn {
 	}
 }
 
-func lexSQString(l *Lexer) stateFn {
+func lexSQString(l *lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
@@ -204,7 +228,7 @@ func lexSQString(l *Lexer) stateFn {
 }
 
 // TODO: refactor
-func lexDQString(l *Lexer) stateFn {
+func lexDQString(l *lexer) stateFn {
 	for {
 		r := l.next()
 		switch r {
@@ -223,7 +247,7 @@ func lexDQString(l *Lexer) stateFn {
 }
 
 func lexIdent(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		for {
 			switch r := l.next(); {
 			case r == eof:
@@ -239,7 +263,7 @@ func lexIdent(nextState stateFn) stateFn {
 }
 
 func lexLineWhitespace(nextState stateFn) stateFn {
-	return func(l *Lexer) stateFn {
+	return func(l *lexer) stateFn {
 		for {
 			switch r := l.peek(); {
 			case r == ' ' || r == '\t':
@@ -255,12 +279,16 @@ func lexLineWhitespace(nextState stateFn) stateFn {
 	}
 }
 
-func lexStmt(l *Lexer) stateFn {
+func lexStmt(l *lexer) stateFn {
 	if l.startsWith(token.RSTMT) {
 		return l.lexToken(token.RSTMT, lexLineWhitespace(lexText))
 	}
 
-	if state := l.tryTokens(lexStmt, append(token.GetOperators(), token.GetKeywords()...)...); state != nil {
+	if state := l.tryTokens(lexStmt, token.GetOperators()...); state != nil {
+		return state
+	}
+
+	if state := l.tryKeywords(lexStmt); state != nil {
 		return state
 	}
 

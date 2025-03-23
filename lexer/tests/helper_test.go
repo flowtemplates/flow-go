@@ -46,15 +46,7 @@ type testCase struct {
 func runTestCases(t *testing.T, testCases []testCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := lexer.FromString(tc.input)
-			var tokens []token.Token
-			for {
-				tok := l.NextToken()
-				if tok.Kind == token.EOF {
-					break
-				}
-				tokens = append(tokens, tok)
-			}
+			tokens := lexer.TokensFromBytes([]byte(tc.input))
 
 			if err := equal(tokens, tc.expected); err != nil {
 				t.Errorf("%s\nInput: %s\nTest Case: %s\nExpected:\n%v\nGot:\n%v",

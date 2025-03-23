@@ -162,15 +162,7 @@ func TestPosition(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			l := lexer.FromString(tc.input)
-			var tokens []token.Token
-			for {
-				tok := l.NextToken()
-				if tok.Kind == token.EOF {
-					break
-				}
-				tokens = append(tokens, tok)
-			}
+			tokens := lexer.TokensFromBytes([]byte(tc.input))
 
 			eq := func(gotTokens []token.Token, expectedTokens []token.Token) error {
 				l := len(gotTokens)

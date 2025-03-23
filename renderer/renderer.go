@@ -26,37 +26,36 @@ func scopeToContext(scope Scope) Context {
 	return context
 }
 
-func render(ast []parser.Node, indent string, context Context) (string, error) {
+func render(ast []parser.Node, context Context) (string, error) {
 	var result strings.Builder
 	for _, node := range ast {
 		switch n := node.(type) {
-		case parser.Text:
+		case *parser.TextNode:
 			for _, s := range n.Val {
-				result.WriteString(strings.TrimPrefix(s, indent))
+				result.WriteString(s)
 			}
-		case parser.ExprBlock:
+		case *parser.ExprNode:
 			s, err := exprToValue(n.Body, context)
 			if err != nil {
 				return "", err
 			}
 
-			result.WriteString(s.String())
-		case parser.IfStmt:
-			conditionValue, err := exprToValue(n.BegTag.Body, context)
+			result.WriteString(s.AsString())
+		case *parser.IfNode:
+			conditionValue, err := exprToValue(n.IfTag.Expr, context)
 			if err != nil {
 				return "", err
 			}
 
-			indent += n.BegTag.PreWs
-			if conditionValue.Boolean() {
-				bodyContent, err := render(n.Body, indent, context)
+			if conditionValue.AsBoolean() {
+				bodyContent, err := render(n.MainBody, context)
 				if err != nil {
 					return "", err
 				}
 
 				result.WriteString(bodyContent)
-			} else if n.Else != nil {
-				elseContent, err := render(n.Else, indent, context)
+			} else {
+				elseContent, err := render(n.ElseBody.Body, context)
 				if err != nil {
 					return "", err
 				}
@@ -71,7 +70,7 @@ func render(ast []parser.Node, indent string, context Context) (string, error) {
 
 func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 	switch n := expr.(type) {
-	case parser.Ident:
+	case *parser.Ident:
 		value, exists := context[n.Name]
 		if !exists {
 			return nil, fmt.Errorf("%s not declared", n.Name)
@@ -85,7 +84,7 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 		}
 
 		var exp parser.Expr
-		if conditionValue.Boolean() {
+		if conditionValue.AsBoolean() {
 			exp = n.TrueExpr
 		} else {
 			exp = n.FalseExpr
@@ -98,18 +97,20 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 
 		return value, nil
 	case *parser.UnaryExpr:
-		v, err := exprToValue(n.X, context)
+		v, err := exprToValue(n.Expr, context)
 		if err != nil {
 			return nil, err
 		}
 
-		switch n.Op {
+		switch n.Op.Kind {
 		case token.EXCL, token.NOT:
-			return value.BooleanValue(!v.Boolean()), nil
+			return value.BooleanValue(!v.AsBoolean()), nil
 		default:
 			return nil, errors.New("unknown operator in unary expression")
 		}
-	case parser.Lit:
+	case *parser.NumberLit:
+		return n.Value, nil
+	case *parser.StringLit:
 		return n.Value, nil
 	case *parser.BinaryExpr:
 		x, err := exprToValue(n.X, context)
@@ -122,31 +123,31 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 			return nil, err
 		}
 
-		switch n.Op {
+		switch n.Op.Kind {
 		// case token.ADD:
 		// 	return x.Add(y), nil
 		case token.NEQL, token.ISNOT:
-			return value.BooleanValue(x.String() != y.String()), nil
+			return value.BooleanValue(x.AsString() != y.AsString()), nil
 		case token.EQL, token.IS:
-			return value.BooleanValue(x.String() == y.String()), nil
+			return value.BooleanValue(x.AsString() == y.AsString()), nil
 		case token.LAND, token.AND:
-			if !x.Boolean() {
+			if !x.AsBoolean() {
 				return x, nil
 			}
 			return y, nil
 		case token.LOR, token.OR:
-			if x.Boolean() {
+			if x.AsBoolean() {
 				return x, nil
 			}
 			return y, nil
 		case token.GRTR:
-			return value.BooleanValue(x.Number() > y.Number()), nil
+			return value.BooleanValue(x.AsNumber() > y.AsNumber()), nil
 		case token.LESS:
-			return value.BooleanValue(x.Number() < y.Number()), nil
+			return value.BooleanValue(x.AsNumber() < y.AsNumber()), nil
 		case token.LEQ:
-			return value.BooleanValue(x.Number() <= y.Number()), nil
+			return value.BooleanValue(x.AsNumber() <= y.AsNumber()), nil
 		case token.GEQ:
-			return value.BooleanValue(x.Number() >= y.Number()), nil
+			return value.BooleanValue(x.AsNumber() >= y.AsNumber()), nil
 		default:
 			return nil, errors.New("unknown operator in binary expression")
 		}

@@ -11,8 +11,10 @@ type ErrorType string
 
 const (
 	ErrExpressionExpected ErrorType = "expression expected"
-	ErrEndExpected        ErrorType = "'{% end %}' expected"
-	ErrKeywordExpected    ErrorType = "'if', 'genif', 'end' expected"
+	// TODO: change message
+	// ErrUnexpectedBeforeStmt ErrorType = "unexpected text before statement tag"
+	ErrEndExpected     ErrorType = "'{% end %}' expected"
+	ErrKeywordExpected ErrorType = "'if', 'genif', 'end' expected"
 )
 
 type Error struct {

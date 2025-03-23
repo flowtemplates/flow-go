@@ -14,7 +14,7 @@ func TestGetTypeMap(t *testing.T) {
 			name: "Plain text",
 			str:  "Hello world",
 			input: []parser.Node{
-				parser.Text{
+				&parser.TextNode{
 					Val: []string{"Hello world"},
 				},
 			},
@@ -25,8 +25,8 @@ func TestGetTypeMap(t *testing.T) {
 			name: "Single var",
 			str:  "{{name}}",
 			input: []parser.Node{
-				parser.ExprBlock{
-					Body: parser.Ident{Name: "name"},
+				&parser.ExprNode{
+					Body: &parser.Ident{Name: "name"},
 				},
 			},
 			expected: analyzer.TypeMap{
@@ -123,18 +123,17 @@ func TestGetTypeMap(t *testing.T) {
 			name: "If statement",
 			str:  "{%if var%}\ntext\n{%end%}",
 			input: []parser.Node{
-				parser.IfStmt{
-					BegTag: parser.StmtTagWithExpr{
-						Body: parser.Ident{
+				&parser.IfNode{
+					IfTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
 							Name: "var",
 						},
 					},
-					Body: []parser.Node{
-						parser.Text{
+					MainBody: []parser.Node{
+						&parser.TextNode{
 							Val: []string{"\n", "text", "\n"},
 						},
 					},
-					Else: nil,
 				},
 			},
 			expected: analyzer.TypeMap{

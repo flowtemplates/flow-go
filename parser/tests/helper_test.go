@@ -11,19 +11,19 @@ import (
 type testCase struct {
 	name        string
 	input       string
-	expected    parser.Expr
+	expected    parser.Ast
 	errExpected error
 }
 
 func runTestCases(t *testing.T, testCases []testCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := parser.AstFromString(tc.input)
+			got, err := parser.AstFromBytes([]byte(tc.input))
 
 			switch {
 			case tc.errExpected != nil:
 				if err == nil || tc.errExpected.Error() != err.Error() {
-					t.Errorf("Input: %q\nUnexpected error\nWant: %v\nGot: %s", tc.input, tc.errExpected, err)
+					t.Errorf("Input: %q\nError mismatch\nWant: %v\nGot: %s", tc.input, tc.errExpected, err)
 					return
 				}
 			case err != nil:

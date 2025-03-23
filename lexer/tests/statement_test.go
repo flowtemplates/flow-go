@@ -9,6 +9,15 @@ import (
 func TestIfStatement(t *testing.T) {
 	testCases := []testCase{
 		{
+			name:  "Empty condition if statement",
+			input: "{%if%}",
+			expected: []token.Token{
+				{Kind: token.LSTMT},
+				{Kind: token.IF},
+				{Kind: token.RSTMT},
+			},
+		},
+		{
 			name:  "Simple if statement",
 			input: "{%if name%}",
 			expected: []token.Token{
@@ -141,7 +150,7 @@ Text
 			},
 		},
 		{
-			name: "If block with text before",
+			name: "If block with text in front",
 			input: `
 Text{%if name%}
 Text

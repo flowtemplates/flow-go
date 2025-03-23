@@ -26,7 +26,7 @@ func addToTypeMap(v Symbol, tm TypeMap) error {
 
 func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Type {
 	switch e := expr.(type) {
-	case parser.Ident:
+	case *parser.Ident:
 		if e.Name == "true" || e.Name == "false" {
 			return types.Boolean
 		}
@@ -39,13 +39,15 @@ func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Typ
 		}
 
 		return types.Any
-	case parser.Lit:
+	case *parser.StringLit:
 		return e.Value.Type()
-	case parser.TernaryExpr:
+	case *parser.NumberLit:
+		return e.Value.Type()
+	case *parser.TernaryExpr:
 		parseExpressionTypes(e.Condition, tm, errs)
 		parseExpressionTypes(e.TrueExpr, tm, errs)
 		parseExpressionTypes(e.FalseExpr, tm, errs)
-	case parser.BinaryExpr:
+	case *parser.BinaryExpr:
 		// t1 := parseExpressionTypes(e.X, tm, errs)
 		// t2 := parseExpressionTypes(e.Y, tm, errs)
 

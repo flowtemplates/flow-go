@@ -11,6 +11,10 @@ func (k Kind) String() string {
 	return TokenString(k)
 }
 
+func (k Kind) IsOneOfMany(types ...Kind) bool {
+	return slices.Contains(types, k)
+}
+
 const (
 	EOF Kind = iota
 	ILLEGAL
@@ -26,7 +30,7 @@ const (
 	FLOAT // 123.45
 	STR   // "abc"
 
-	errors_beg
+	errors_beg // nolint: unused
 	// Errors
 	NOT_TERMINATED_STR
 	errors_end
@@ -193,6 +197,10 @@ func TokenString(k Kind) string {
 	return tokens[k]
 }
 
+func TokenBytes(k Kind) []byte {
+	return []byte(tokens[k])
+}
+
 func TokenRune(k Kind) rune {
 	return rune(tokens[k][0])
 }
@@ -209,7 +217,7 @@ func (t Token) String() string {
 		case EOF:
 			return "EOF"
 		case TEXT:
-			return fmt.Sprintf("{Kind: %s, Val: %.10q, Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
+			return fmt.Sprintf("{Kind: %s, Val: %.10q.., Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
 		default:
 			return fmt.Sprintf("{Kind: %s, Val: %q, Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
 		}

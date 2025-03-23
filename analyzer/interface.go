@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"github.com/flowtemplates/flow-go/lexer"
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/types"
 )
@@ -36,11 +35,11 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 	errs := []error{}
 	for _, node := range ast {
 		switch n := node.(type) {
-		case parser.ExprBlock:
+		case *parser.ExprNode:
 			parseExpressionTypes(n.Body, tm, &errs)
-		case parser.IfStmt:
-			switch e := n.BegTag.Body.(type) {
-			case parser.Ident:
+		case *parser.IfNode:
+			switch e := n.IfTag.Expr.(type) {
+			case *parser.Ident:
 				if err := addToTypeMap(Symbol{
 					Name: e.Name,
 					Typ:  types.Boolean,
@@ -58,9 +57,8 @@ func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
 	return nil
 }
 
-func GetTypeMapFromString(input string, tm TypeMap) error {
-	tokens := lexer.TokensFromString(input)
-	ast, err := parser.New(tokens).Parse()
+func GetTypeMapFromBytes(input []byte, tm TypeMap) error {
+	ast, err := parser.AstFromBytes(input)
 	if err != nil {
 		return err
 	}
