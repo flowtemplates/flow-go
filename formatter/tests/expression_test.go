@@ -229,6 +229,18 @@ text
 {{ flag do bar ? 1 : 3 else 2 }}
 `[1:],
 		},
+		{
+			name: "Simple filter",
+			input: `
+{{ name -> upper }}
+`[1:],
+		},
+		{
+			name: "Nested filters",
+			input: `
+{{ name -> upper -> camel }}
+`[1:],
+		},
 	}
 	runUnchangedTestCases(t, testCases)
 }
@@ -358,6 +370,24 @@ text
 `[1:],
 			expected: `
 {{ flag ? bar ? 1 : 3 : 2 }}
+`[1:],
+		},
+		{
+			name: "Simple filter",
+			input: `
+{{name->upper}}
+`[1:],
+			expected: `
+{{ name -> upper }}
+`[1:],
+		},
+		{
+			name: "Nested filters",
+			input: `
+{{ name->  upper ->		 camel}}
+`[1:],
+			expected: `
+{{ name -> upper -> camel }}
 `[1:],
 		},
 	}

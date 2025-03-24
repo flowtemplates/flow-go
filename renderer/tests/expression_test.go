@@ -118,9 +118,15 @@ func TestExpressions(t *testing.T) {
 			errExpected: false,
 		},
 		{
-			name:     "Multiple expressions",
-			input:    "Hello {{name}}!\nFrom {{ flow }} templates",
-			expected: "Hello world!\nFrom flow templates",
+			name: "Multiple expressions",
+			input: `
+Hello {{name}}!
+From {{ flow }} templates
+`[1:],
+			expected: `
+Hello world!
+From flow templates
+`[1:],
 			scope: renderer.Scope{
 				"name": "world",
 				"flow": "flow",
@@ -164,13 +170,19 @@ func TestOperators(t *testing.T) {
 			scope:    renderer.Scope{},
 		},
 		{
-			name:     "Multiple ||",
+			name:     "0 || 'a'",
+			input:    "{{0 || 'a'}}",
+			expected: "a",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Multiple || with strings",
 			input:    "{{'a' || 'b' || 'c'}}",
 			expected: "a",
 			scope:    renderer.Scope{},
 		},
 		{
-			name:     "Multiple &&",
+			name:     "Multiple && with strings",
 			input:    "{{'a' && 'b' && 'c'}}",
 			expected: "c",
 			scope:    renderer.Scope{},

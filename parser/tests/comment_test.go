@@ -24,7 +24,7 @@ func TestComments(t *testing.T) {
 {# asd #}`[1:],
 			expected: []parser.Node{
 				&parser.CommNode{
-					Val: " asd ",
+					Val: "asd",
 				},
 			},
 		},
@@ -34,7 +34,7 @@ func TestComments(t *testing.T) {
 {# asd #}`[1:],
 			expected: []parser.Node{
 				&parser.CommNode{
-					Val: " asd ",
+					Val: "asd",
 				},
 			},
 		},
@@ -45,7 +45,7 @@ func TestComments(t *testing.T) {
 `[1:],
 			expected: []parser.Node{
 				&parser.CommNode{
-					Val:    " asd ",
+					Val:    "asd",
 					PostLB: "\n",
 				},
 			},
@@ -56,7 +56,7 @@ func TestComments(t *testing.T) {
 {# asd #}  `[1:],
 			expected: []parser.Node{
 				&parser.CommNode{
-					Val:    " asd ",
+					Val:    "asd",
 					PostLB: "",
 				},
 			},
@@ -68,7 +68,7 @@ func TestComments(t *testing.T) {
 `[1:],
 			expected: []parser.Node{
 				&parser.CommNode{
-					Val:    " asd ",
+					Val:    "asd",
 					PostLB: "\n",
 				},
 			},
@@ -95,15 +95,15 @@ Text
 `[1:],
 			expected: []parser.Node{
 				&parser.CommNode{
-					Val:    " Text ",
+					Val:    "Text",
 					PostLB: "\n",
 				},
 				&parser.CommNode{
-					Val:    " 2 ",
+					Val:    "2",
 					PostLB: "\n",
 				},
 				&parser.CommNode{
-					Val:    " 3 ",
+					Val:    "3",
 					PostLB: "\n",
 				},
 			},

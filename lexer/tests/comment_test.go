@@ -18,6 +18,15 @@ func TestComments(t *testing.T) {
 		},
 		{
 			name:  "Single comment",
+			input: "{#no comments..#}",
+			expected: []token.Token{
+				{Kind: token.LCOMM},
+				{Kind: token.COMM_TEXT, Val: `no comments..`},
+				{Kind: token.RCOMM},
+			},
+		},
+		{
+			name:  "Single comment with whitespaces",
 			input: "{# no comments.. #}",
 			expected: []token.Token{
 				{Kind: token.LCOMM},

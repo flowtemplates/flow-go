@@ -144,7 +144,7 @@ text
 			},
 		},
 		{
-			name: "Nested if blocks",
+			name: "Nested if statements",
 			input: `
 {%if var%}
 1
@@ -212,9 +212,9 @@ text
 							},
 						},
 					},
-					ElseIfs: []parser.ElseIfNode{
+					ElseIfs: []parser.ClauseWithExpr{
 						{
-							ElseIfTag: parser.StmtTagWithExpr{
+							Tag: parser.StmtTagWithExpr{
 								Expr: &parser.Ident{
 									Name: "flag",
 								},
@@ -257,9 +257,9 @@ text
 							},
 						},
 					},
-					ElseIfs: []parser.ElseIfNode{
+					ElseIfs: []parser.ClauseWithExpr{
 						{
-							ElseIfTag: parser.StmtTagWithExpr{
+							Tag: parser.StmtTagWithExpr{
 								Expr: &parser.Ident{
 									Name: "flag",
 								},
@@ -274,7 +274,7 @@ text
 							},
 						},
 					},
-					ElseBody: parser.ElseNode{
+					ElseBody: parser.Clause{
 						Body: []parser.Node{
 							&parser.TextNode{
 								Val: []string{
@@ -450,68 +450,242 @@ func TestGenIfStatements(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-// func TestSwitchStatements(t *testing.T) {
-// 	testCases := []testCase{
-// 		{
-// 			name: "Simple switch statement",
-// 			input: `
-// {%switch var%}
-// {%case 1%}
-// text
-// {%end%}`[1:],
-// 			expected: []parser.Node{
-// 				parser.SwitchStmt{
-// 					BegTag: parser.StmtTagWithExpr{
-// 						StmtTag: parser.StmtTag{
-// 							Kw: token.SWITCH,
-// 						},
-// 						Body: parser.Ident{
-// 							Name: "var",
-// 						},
-// 					},
-// 					Cases: []parser.CaseClause{
-// 						{
-// 							CaseTag: parser.StmtTagWithExpr{
-// 								StmtTag: parser.StmtTag{
-// 									Kw: token.CASE,
-// 								},
-// 								Body: parser.Lit{
-// 									Value: value.NumberValue(1),
-// 								},
-// 							},
-// 							Body: []parser.Node{
-// 								parser.Text{
-// 									Val: []string{
-// 										"text",
-// 										"\n",
-// 									},
-// 								},
-// 							},
-// 						},
-// 					},
-// 					DefaultCase: []parser.Node{},
-// 				},
-// 				parser.IfStmt{
-// 					BegTag: parser.StmtTagWithExpr{
-// 						StmtTag: parser.StmtTag{
-// 							Kw: token.IF,
-// 						},
-// 						Body: parser.Ident{
-// 							Name: "var",
-// 						},
-// 					},
-// 					Body: []parser.Node{
-// 						parser.Text{
-// 							Val: []string{
-// 								"text",
-// 								"\n",
-// 							},
-// 						},
-// 					},
-// 					Else: nil,
-// 				},
-// 			},
-// 		},
-// 	}
-// 	runTestCases(t, testCases)
-// }
+func TestSwitchStatements(t *testing.T) {
+	testCases := []testCase{
+		{
+			name: "Switch with 1 case",
+			input: `
+{%switch name%}
+{%case a%}
+Text
+{%end%}
+`[1:],
+			expected: []parser.Node{
+				&parser.SwitchNode{
+					SwitchTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
+							Name: "name",
+						},
+					},
+					Cases: []parser.ClauseWithExpr{
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "a",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"Text",
+										"\n",
+									},
+								},
+							},
+						},
+					},
+					DefaultCase: nil,
+				},
+			},
+		},
+		{
+			name: "Switch with several cases",
+			input: `
+{%switch name%}
+{%case a%}
+1
+{%case b%}
+2
+{%case c%}
+3
+{%end%}
+`[1:],
+			expected: []parser.Node{
+				&parser.SwitchNode{
+					SwitchTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
+							Name: "name",
+						},
+					},
+					Cases: []parser.ClauseWithExpr{
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "a",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"1",
+										"\n",
+									},
+								},
+							},
+						},
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "b",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"2",
+										"\n",
+									},
+								},
+							},
+						},
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "c",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"3",
+										"\n",
+									},
+								},
+							},
+						},
+					},
+					DefaultCase: nil,
+				},
+			},
+		},
+		{
+			name: "Switch-default with 1 case",
+			input: `
+{%switch name%}
+{%case a%}
+Text
+{%default%}
+text2
+{%end%}
+`[1:],
+			expected: []parser.Node{
+				&parser.SwitchNode{
+					SwitchTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
+							Name: "name",
+						},
+					},
+					Cases: []parser.ClauseWithExpr{
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "a",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"Text",
+										"\n",
+									},
+								},
+							},
+						},
+					},
+					DefaultCase: &parser.Clause{
+						Body: []parser.Node{
+							&parser.TextNode{
+								Val: []string{
+									"text2",
+									"\n",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Switch-default with several cases",
+			input: `
+{%switch name%}
+{%case a%}
+Text
+{%case b%}
+2
+{%case c%}
+3
+{%default%}
+text2
+{%end%}
+`[1:],
+			expected: []parser.Node{
+				&parser.SwitchNode{
+					SwitchTag: parser.StmtTagWithExpr{
+						Expr: &parser.Ident{
+							Name: "name",
+						},
+					},
+					Cases: []parser.ClauseWithExpr{
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "a",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"Text",
+										"\n",
+									},
+								},
+							},
+						},
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "b",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"2",
+										"\n",
+									},
+								},
+							},
+						},
+						{
+							Tag: parser.StmtTagWithExpr{
+								Expr: &parser.Ident{
+									Name: "c",
+								},
+							},
+							Body: []parser.Node{
+								&parser.TextNode{
+									Val: []string{
+										"3",
+										"\n",
+									},
+								},
+							},
+						},
+					},
+					DefaultCase: &parser.Clause{
+						Body: []parser.Node{
+							&parser.TextNode{
+								Val: []string{
+									"text2",
+									"\n",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	runTestCases(t, testCases)
+}

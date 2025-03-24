@@ -31,10 +31,56 @@ func (f *formatter) writeToken(kind token.Kind) {
 	f.buf.WriteString(token.TokenString(kind))
 }
 
+func (f *formatter) writeClause(preWs string, tokens ...token.Kind) {
+	f.buf.WriteString(preWs)
+	f.writeToken(token.LSTMT)
+	f.writeSpace()
+
+	for _, t := range tokens {
+		f.writeToken(t)
+		f.writeSpace()
+	}
+
+	f.writeToken(token.RSTMT)
+	f.writeLineBreak()
+}
+
+func (f *formatter) writeClauseWithExpr(preWs string, expr parser.Expr, tokens ...token.Kind) error {
+	f.buf.WriteString(preWs)
+	f.writeToken(token.LSTMT)
+	f.writeSpace()
+
+	for _, t := range tokens {
+		f.writeToken(t)
+		f.writeSpace()
+	}
+
+	if err := f.writeExpr(expr); err != nil {
+		return err
+	}
+
+	f.writeSpace()
+	f.writeToken(token.RSTMT)
+	f.writeLineBreak()
+
+	return nil
+}
+
 func (f *formatter) writeNode(node parser.Node) error {
 	switch n := node.(type) {
 	case *parser.TextNode:
 		f.buf.WriteString(strings.Join(n.Val, ""))
+	case *parser.CommNode:
+		f.buf.WriteString(n.PreWs)
+		f.writeToken(token.LCOMM)
+		f.writeSpace()
+
+		f.buf.WriteString(n.Val)
+
+		f.writeSpace()
+		f.writeToken(token.RCOMM)
+
+		f.buf.WriteString(n.PostLB)
 	case *parser.ExprNode:
 		f.writeToken(token.LEXPR)
 		f.writeSpace()
@@ -45,21 +91,10 @@ func (f *formatter) writeNode(node parser.Node) error {
 
 		f.writeSpace()
 		f.writeToken(token.REXPR)
-	// TODO: refactor
 	case *parser.IfNode:
-		f.writeToken(token.LSTMT)
-		f.writeSpace()
-
-		f.writeToken(token.IF)
-		f.writeSpace()
-
-		if err := f.writeExpr(n.IfTag.Expr); err != nil {
+		if err := f.writeClauseWithExpr(n.IfTag.PreWs, n.IfTag.Expr, token.IF); err != nil {
 			return err
 		}
-
-		f.writeSpace()
-		f.writeToken(token.RSTMT)
-		f.writeLineBreak()
 
 		for _, node := range n.MainBody {
 			if err := f.writeNode(node); err != nil {
@@ -68,22 +103,10 @@ func (f *formatter) writeNode(node parser.Node) error {
 		}
 
 		for _, elseIf := range n.ElseIfs {
-			f.writeToken(token.LSTMT)
-			f.writeSpace()
-
-			f.writeToken(token.ELSE)
-			f.writeSpace()
-
-			f.writeToken(token.IF)
-			f.writeSpace()
-
-			if err := f.writeExpr(elseIf.ElseIfTag.Expr); err != nil {
+			if err := f.writeClauseWithExpr(elseIf.Tag.PreWs, elseIf.Tag.Expr, token.ELSE, token.IF); err != nil {
 				return err
 			}
 
-			f.writeSpace()
-			f.writeToken(token.RSTMT)
-			f.writeLineBreak()
 			for _, node := range elseIf.Body {
 				if err := f.writeNode(node); err != nil {
 					return err
@@ -92,14 +115,7 @@ func (f *formatter) writeNode(node parser.Node) error {
 		}
 
 		if len(n.ElseBody.Body) > 0 {
-			f.writeToken(token.LSTMT)
-			f.writeSpace()
-
-			f.writeToken(token.ELSE)
-			f.writeSpace()
-
-			f.writeToken(token.RSTMT)
-			f.writeLineBreak()
+			f.writeClause(n.ElseBody.Tag.PreWs, token.ELSE)
 
 			for _, node := range n.ElseBody.Body {
 				if err := f.writeNode(node); err != nil {
@@ -108,14 +124,35 @@ func (f *formatter) writeNode(node parser.Node) error {
 			}
 		}
 
-		f.writeToken(token.LSTMT)
-		f.writeSpace()
+		f.writeClause(n.EndTag.PreWs, token.END)
+	case *parser.SwitchNode:
+		if err := f.writeClauseWithExpr(n.SwitchTag.PreWs, n.SwitchTag.Expr, token.SWITCH); err != nil {
+			return err
+		}
 
-		f.writeToken(token.END)
-		f.writeSpace()
+		for _, cc := range n.Cases {
+			if err := f.writeClauseWithExpr(cc.Tag.PreWs, cc.Tag.Expr, token.CASE); err != nil {
+				return err
+			}
 
-		f.writeToken(token.RSTMT)
-		f.writeLineBreak()
+			for _, node := range cc.Body {
+				if err := f.writeNode(node); err != nil {
+					return err
+				}
+			}
+		}
+
+		if n.DefaultCase != nil {
+			f.writeClause(n.DefaultCase.Tag.PreWs, token.DEFAULT)
+
+			for _, node := range n.DefaultCase.Body {
+				if err := f.writeNode(node); err != nil {
+					return err
+				}
+			}
+		}
+
+		f.writeClause(n.EndTag.PreWs, token.END)
 	default:
 		return fmt.Errorf("unknown node type: %s", n)
 	}
@@ -124,65 +161,75 @@ func (f *formatter) writeNode(node parser.Node) error {
 }
 
 func (f *formatter) writeExpr(expr parser.Expr) error {
-	switch nn := expr.(type) {
+	switch e := expr.(type) {
 	case *parser.StringLit:
-		f.buf.WriteByte(nn.Quote)
-		f.buf.WriteString(nn.Value.AsString())
-		f.buf.WriteByte(nn.Quote)
+		f.buf.WriteByte(e.Quote)
+		f.buf.WriteString(e.Value.AsString())
+		f.buf.WriteByte(e.Quote)
 	case *parser.NumberLit:
-		f.buf.WriteString(nn.Value.AsString())
+		f.buf.WriteString(e.Value.AsString())
 	case *parser.ParenExpr:
 		f.writeToken(token.LPAREN)
-		if err := f.writeExpr(nn.Expr); err != nil {
+		if err := f.writeExpr(e.Expr); err != nil {
 			return err
 		}
 
 		f.writeToken(token.RPAREN)
 	case *parser.UnaryExpr:
-		f.buf.WriteString(nn.Op.Kind.String())
-		if nn.Op.Kind.IsOneOfMany(token.NOT) {
+		f.writeToken(e.Op.Kind)
+		if e.Op.Kind.IsOneOfMany(token.NOT) {
 			f.writeSpace()
 		}
 
-		if err := f.writeExpr(nn.Expr); err != nil {
+		if err := f.writeExpr(e.Expr); err != nil {
 			return err
 		}
 	case *parser.BinaryExpr:
-		if err := f.writeExpr(nn.X); err != nil {
+		if err := f.writeExpr(e.X); err != nil {
 			return err
 		}
 
 		f.writeSpace()
-		f.buf.WriteString(nn.Op.Kind.String())
+		f.writeToken(e.Op.Kind)
 		f.writeSpace()
 
-		if err := f.writeExpr(nn.Y); err != nil {
+		if err := f.writeExpr(e.Y); err != nil {
 			return err
 		}
 	case *parser.Ident:
-		f.buf.WriteString(nn.Name)
+		f.buf.WriteString(e.Name)
 	case *parser.TernaryExpr:
-		if err := f.writeExpr(nn.Condition); err != nil {
+		if err := f.writeExpr(e.Condition); err != nil {
 			return err
 		}
 
 		f.writeSpace()
-		f.buf.WriteString(nn.Do.Kind.String())
+		f.writeToken(e.Do.Kind)
 		f.writeSpace()
 
-		if err := f.writeExpr(nn.TrueExpr); err != nil {
+		if err := f.writeExpr(e.TrueExpr); err != nil {
 			return err
 		}
 
 		f.writeSpace()
-		f.buf.WriteString(nn.Else.Kind.String())
+		f.writeToken(e.Else.Kind)
 		f.writeSpace()
 
-		if err := f.writeExpr(nn.FalseExpr); err != nil {
+		if err := f.writeExpr(e.FalseExpr); err != nil {
 			return err
 		}
+	case *parser.FilterExpr:
+		if err := f.writeExpr(e.Expr); err != nil {
+			return err
+		}
+
+		f.writeSpace()
+		f.writeToken(token.RARR)
+		f.writeSpace()
+
+		f.buf.WriteString(e.Filter.Name)
 	default:
-		return fmt.Errorf("unknown expression type: %v", nn)
+		return fmt.Errorf("unknown expression type: %#v", e)
 	}
 
 	return nil

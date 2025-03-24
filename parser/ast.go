@@ -89,19 +89,14 @@ type (
 		Expr
 	}
 
-	ElseIfNode struct {
-		ElseIfTag StmtTagWithExpr
-		Body      []Node
+	Clause struct {
+		Tag  StmtTag
+		Body []Node
 	}
 
-	ElseNode struct {
-		ElseTag StmtTag
-		Body    []Node
-	}
-
-	CaseClause struct {
-		CaseTag StmtTagWithExpr
-		Body    []Node
+	ClauseWithExpr struct {
+		Tag  StmtTagWithExpr
+		Body []Node
 	}
 )
 
@@ -134,15 +129,15 @@ type (
 	IfNode struct {
 		IfTag    StmtTagWithExpr
 		MainBody []Node
-		ElseIfs  []ElseIfNode
-		ElseBody ElseNode
+		ElseIfs  []ClauseWithExpr
+		ElseBody Clause
 		EndTag   StmtTag
 	}
 
 	SwitchNode struct {
 		SwitchTag   StmtTagWithExpr
-		Cases       []CaseClause
-		DefaultCase []Node
+		Cases       []ClauseWithExpr
+		DefaultCase *Clause
 		EndTag      StmtTag
 	}
 )

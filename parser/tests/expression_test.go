@@ -976,8 +976,45 @@ func TestFilters(t *testing.T) {
 			},
 		},
 		{
+			name:  "Filter with whitespaces",
+			input: "{{ name -> upper }}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.FilterExpr{
+						Expr: &parser.Ident{
+							Name: "name",
+						},
+						Filter: parser.Ident{
+							Name: "upper",
+						},
+					},
+				},
+			},
+		},
+		{
 			name:  "Nested filters",
 			input: "{{name->upper->camel}}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.FilterExpr{
+						Expr: &parser.FilterExpr{
+							Expr: &parser.Ident{
+								Name: "name",
+							},
+							Filter: parser.Ident{
+								Name: "upper",
+							},
+						},
+						Filter: parser.Ident{
+							Name: "camel",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "Nested filters with whitespaces",
+			input: "{{ name  -> upper -> camel }}",
 			expected: []parser.Node{
 				&parser.ExprNode{
 					Body: &parser.FilterExpr{
