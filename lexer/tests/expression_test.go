@@ -1028,7 +1028,7 @@ func TestTernary(t *testing.T) {
 			},
 		},
 		{
-			name:  "Ternary as value passed in function",
+			name:  "Ternary as value passed in filter",
 			input: `{{(flag?"bar":"foo")->camel}}`,
 			expected: []token.Token{
 				{Kind: token.LEXPR},

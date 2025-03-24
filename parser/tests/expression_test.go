@@ -956,3 +956,46 @@ func TestTernaries(t *testing.T) {
 	}
 	runTestCases(t, testCases)
 }
+
+func TestFilters(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:  "Simple filter",
+			input: "{{name->upper}}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.FilterExpr{
+						Expr: &parser.Ident{
+							Name: "name",
+						},
+						Filter: parser.Ident{
+							Name: "upper",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "Nested filters",
+			input: "{{name->upper->camel}}",
+			expected: []parser.Node{
+				&parser.ExprNode{
+					Body: &parser.FilterExpr{
+						Expr: &parser.FilterExpr{
+							Expr: &parser.Ident{
+								Name: "name",
+							},
+							Filter: parser.Ident{
+								Name: "upper",
+							},
+						},
+						Filter: parser.Ident{
+							Name: "camel",
+						},
+					},
+				},
+			},
+		},
+	}
+	runTestCases(t, testCases)
+}

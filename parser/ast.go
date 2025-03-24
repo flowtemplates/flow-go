@@ -37,6 +37,11 @@ type (
 		Name string
 	}
 
+	Kw struct {
+		Kind token.Kind
+		Pos  token.Position
+	}
+
 	UnaryExpr struct {
 		Op   Kw
 		Expr Expr
@@ -56,15 +61,16 @@ type (
 		FalseExpr Expr
 	}
 
-	Kw struct {
-		Kind token.Kind
-		Pos  token.Position
-	}
-
 	ParenExpr struct {
+		Expr
 		Lparen token.Position
 		Rparen token.Position
+	}
+
+	FilterExpr struct {
 		Expr
+		OpPos  token.Position
+		Filter Ident
 	}
 
 	StmtTag struct {
@@ -102,8 +108,9 @@ type (
 // Nodes
 type (
 	CommNode struct {
-		PreWs  string
-		Pos    token.Position
+		PreWs string
+		Pos   token.Position
+		// TODO: store val without spaces on the sides to format properly
 		Val    string
 		PostLB string
 	}
@@ -156,6 +163,7 @@ func (*UnaryExpr) expr()   {}
 func (*BinaryExpr) expr()  {}
 func (*TernaryExpr) expr() {}
 func (*ParenExpr) expr()   {}
+func (*FilterExpr) expr()  {}
 
 // stmtNode() ensures that only statement nodes can be
 // assigned to a Stmt.

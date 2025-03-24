@@ -8,9 +8,7 @@ import (
 )
 
 func (p *parser) parseExprNode() (*ExprNode, error) {
-	exprNode := ExprNode{
-		// LBrace: p.currentToken.Pos,
-	}
+	exprNode := ExprNode{}
 	p.next() // Consume LEXPR
 	p.consumeWhitespace()
 
@@ -27,16 +25,49 @@ func (p *parser) parseExprNode() (*ExprNode, error) {
 		}
 	}
 
-	// exprBlock.RBrace = p.currentToken.Pos
 	p.next() // Consume REXPR
 	return &exprNode, nil
 }
 
 func (p *parser) parseExpr() (Expr, error) {
-	return p.parseTernaryExpr(1)
+	return p.parseFilterExpr()
 }
 
-// parseTernaryExpr parses expressions with ternary operators and precedence.
+func (p *parser) parseFilterExpr() (Expr, error) {
+	expr, err := p.parseTernaryExpr(1)
+	if err != nil {
+		return nil, err
+	}
+
+	for p.currentToken.Kind == token.RARR {
+		opPos := p.currentToken.Pos
+		p.next()
+		p.consumeWhitespace()
+
+		if p.currentToken.Kind != token.IDENT {
+			return nil, ExpectedTokensError{
+				Pos:    p.currentToken.Pos,
+				Tokens: []token.Kind{token.IDENT},
+			}
+		}
+
+		ident := Ident{
+			Pos:  p.currentToken.Pos,
+			Name: p.currentToken.Val,
+		}
+		p.next()
+		p.consumeWhitespace()
+
+		expr = &FilterExpr{
+			Expr:   expr,
+			OpPos:  opPos,
+			Filter: ident,
+		}
+	}
+
+	return expr, nil
+}
+
 func (p *parser) parseTernaryExpr(minPrecedence int) (Expr, error) {
 	condition, err := p.parseBinaryExpr(minPrecedence)
 	if err != nil {
@@ -114,7 +145,6 @@ func (p *parser) parseUnaryExpr() (Expr, error) {
 		}, nil
 	}
 
-	// If no unary operator, fallback to primary
 	return p.parsePrimary()
 }
 
