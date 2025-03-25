@@ -141,6 +141,7 @@ func (p *parser) parseText() *TextNode {
 
 	return &text
 }
+
 func trimSpaces(s string) string {
 	return strings.TrimFunc(s, func(r rune) bool {
 		return unicode.IsSpace(r) && r != '\n' && r != '\r'
@@ -382,12 +383,8 @@ func (p *parser) parseIfStmt(preWs string) (Node, error) {
 }
 
 func (p *parser) parseGenIfStmt() (Node, error) {
-	genifStmt := StmtNode{
-		StmtTagWithKw: StmtTagWithKw{
-			Kw: Kw{
-				Kind: token.GENIF,
-				Pos:  p.currentToken.Pos,
-			},
+	genifStmt := GenifNode{
+		StmtTagWithExpr: StmtTagWithExpr{
 			StmtTag: StmtTag{
 				PreWs: "", // TODO: fix
 			},
@@ -395,8 +392,6 @@ func (p *parser) parseGenIfStmt() (Node, error) {
 	}
 	p.next() // Consume GENIF
 	p.consumeWhitespace()
-
-	// Parse the condition
 
 	body, err := p.parseExpr()
 	if err != nil {

@@ -111,6 +111,12 @@ Text
 {% end %}
 `[1:],
 		},
+		{
+			name: "Simple genif",
+			input: `
+{% genif true %}
+`[1:],
+		},
 	}
 	runUnchangedTestCases(t, testCases)
 }

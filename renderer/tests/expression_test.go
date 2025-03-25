@@ -292,3 +292,107 @@ func TestTernaries(t *testing.T) {
 	}
 	runTestCases(t, testCases)
 }
+
+func TestFilters(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:     "Upper",
+			input:    "{{ s -> upper }}",
+			expected: "HELLO WORLD",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Upper to string lit",
+			input:    "{{ 'Hello world' -> upper }}",
+			expected: "HELLO WORLD",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Upper to number lit",
+			input:    "{{ 123 -> upper }}",
+			expected: "123",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Upper to true",
+			input:    "{{ true -> upper }}",
+			expected: "",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Lower",
+			input:    "{{ s -> lower }}",
+			expected: "hello world",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Length",
+			input:    "{{ s -> length }}",
+			expected: "11",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Camel case",
+			input:    "{{ s -> camel }}",
+			expected: "helloWorld",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Pascal case",
+			input:    "{{ s -> pascal }}",
+			expected: "HelloWorld",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Kebab case",
+			input:    "{{ s -> kebab }}",
+			expected: "hello-world",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Snake case",
+			input:    "{{ s -> snake }}",
+			expected: "hello_world",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Title case",
+			input:    "{{ s -> title }}",
+			expected: "Hello World",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Capitalize",
+			input:    "{{ s -> capitalize}}",
+			expected: "Hello world",
+			scope: renderer.Scope{
+				"s": "hello world",
+			},
+		},
+		{
+			name:     "Trim",
+			input:    "{{ s -> trim }}",
+			expected: "Hello world",
+			scope: renderer.Scope{
+				"s": "  Hello world 	",
+			},
+		},
+	}
+	runTestCases(t, testCases)
+}

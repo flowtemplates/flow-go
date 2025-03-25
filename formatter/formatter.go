@@ -91,6 +91,10 @@ func (f *formatter) writeNode(node parser.Node) error {
 
 		f.writeSpace()
 		f.writeToken(token.REXPR)
+	case *parser.GenifNode:
+		if err := f.writeClauseWithExpr(n.PreWs, n.Expr, token.GENIF); err != nil {
+			return err
+		}
 	case *parser.IfNode:
 		if err := f.writeClauseWithExpr(n.IfTag.PreWs, n.IfTag.Expr, token.IF); err != nil {
 			return err

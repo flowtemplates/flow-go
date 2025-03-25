@@ -112,6 +112,13 @@ func exprToValue(expr parser.Expr, context Context) (value.Valueable, error) {
 		return n.Value, nil
 	case *parser.StringLit:
 		return n.Value, nil
+	case *parser.FilterExpr:
+		expr, err := exprToValue(n.Expr, context)
+		if err != nil {
+			return nil, err
+		}
+
+		return applyFilter(n.Filter.Name, expr)
 	case *parser.BinaryExpr:
 		x, err := exprToValue(n.X, context)
 		if err != nil {

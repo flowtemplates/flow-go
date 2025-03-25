@@ -150,7 +150,8 @@ Text
 				{Kind: token.RSTMT},
 				{Kind: token.LNBR, Val: "\n"},
 			},
-		}, {
+		},
+		{
 			name: "If block with indentation",
 			input: `
 Text

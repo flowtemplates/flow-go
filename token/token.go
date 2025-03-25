@@ -253,6 +253,7 @@ func GetKeywords() []Kind {
 
 	return res
 }
+
 func (t Token) IsComparisonOp() bool {
 	return (comparison_op_beg < t.Kind && t.Kind < comparison_op_end) ||
 		t.Kind == IS

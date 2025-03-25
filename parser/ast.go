@@ -121,9 +121,8 @@ type (
 		// RBrace token.Position
 	}
 
-	StmtNode struct {
-		StmtTagWithKw
-		Expr
+	GenifNode struct {
+		StmtTagWithExpr
 	}
 
 	IfNode struct {
@@ -145,7 +144,7 @@ type (
 func (*CommNode) node()   {}
 func (*TextNode) node()   {}
 func (*ExprNode) node()   {}
-func (*StmtNode) node()   {}
+func (*GenifNode) node()  {}
 func (*IfNode) node()     {}
 func (*SwitchNode) node() {}
 

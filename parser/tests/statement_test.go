@@ -404,17 +404,14 @@ func TestGenIfStatements(t *testing.T) {
 			name:  "Simple genif",
 			input: "{%genif var%}",
 			expected: []parser.Node{
-				&parser.StmtNode{
-					StmtTagWithKw: parser.StmtTagWithKw{
+				&parser.GenifNode{
+					StmtTagWithExpr: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
 							PreWs: "",
 						},
-						Kw: parser.Kw{
-							Kind: token.GENIF,
+						Expr: &parser.Ident{
+							Name: "var",
 						},
-					},
-					Expr: &parser.Ident{
-						Name: "var",
 					},
 				},
 			},
@@ -423,24 +420,21 @@ func TestGenIfStatements(t *testing.T) {
 			name:  "Genif with equality",
 			input: "{%genif var == 2%}",
 			expected: []parser.Node{
-				&parser.StmtNode{
-					StmtTagWithKw: parser.StmtTagWithKw{
+				&parser.GenifNode{
+					StmtTagWithExpr: parser.StmtTagWithExpr{
 						StmtTag: parser.StmtTag{
 							PreWs: "",
 						},
-						Kw: parser.Kw{
-							Kind: token.GENIF,
-						},
-					},
-					Expr: &parser.BinaryExpr{
-						X: &parser.Ident{
-							Name: "var",
-						},
-						Op: parser.Kw{
-							Kind: token.EQL,
-						},
-						Y: &parser.NumberLit{
-							Value: value.NumberValue(2),
+						Expr: &parser.BinaryExpr{
+							X: &parser.Ident{
+								Name: "var",
+							},
+							Op: parser.Kw{
+								Kind: token.EQL,
+							},
+							Y: &parser.NumberLit{
+								Value: value.NumberValue(2),
+							},
 						},
 					},
 				},
