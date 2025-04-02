@@ -6,7 +6,7 @@ import (
 	"github.com/flowtemplates/flow-go/parser"
 )
 
-func RenderAst(ast []parser.Node, scope Scope) (string, error) {
+func RenderAst(ast []parser.Node, scope Scope) ([]byte, error) {
 	// tm := make(analyzer.TypeMap)
 
 	// if errs := analyzer.GetTypeMapFromAst(ast, tm); len(errs) != 0 {
@@ -17,20 +17,20 @@ func RenderAst(ast []parser.Node, scope Scope) (string, error) {
 	// 	return "", errs[0] // TODO: error handling
 	// }
 
-	context := scopeToContext(scope)
+	context := ScopeToContext(scope)
 
 	return render(ast, context)
 }
 
-func RenderBytes(input []byte, scope Scope) (string, error) {
+func RenderBytes(input []byte, scope Scope) ([]byte, error) {
 	ast, err := parser.AstFromBytes(input)
 	if err != nil {
-		return "", fmt.Errorf("ast from string: %w", err)
+		return nil, fmt.Errorf("ast from bytes: %w", err)
 	}
 
 	res, err := RenderAst(ast, scope)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	return res, nil

@@ -1,87 +1,80 @@
 package analyzer
 
 import (
-	"fmt"
-
 	"github.com/flowtemplates/flow-go/parser"
+	"github.com/flowtemplates/flow-go/renderer"
+	"github.com/flowtemplates/flow-go/token"
 	"github.com/flowtemplates/flow-go/types"
 )
 
-type Symbol struct {
-	Name string
-	Typ  types.Type
-}
-
 type TypeMap map[string]types.Type
 
-func addToTypeMap(v Symbol, tm TypeMap) error {
-	if typ, exists := tm[v.Name]; !exists || typ == types.Any {
-		tm[v.Name] = v.Typ
-	} else if v.Typ != types.Any && v.Typ != typ {
-		return fmt.Errorf("unmatched type of %q, got %s, expected %s", v.Name, v.Typ, typ)
+func (tm TypeMap) addToTypeMap(name string, typ types.Type) (types.Type, *TypeError) {
+	if name == "true" || name == "false" {
+		return types.Boolean, nil
 	}
 
-	return nil
+	if t, exists := tm[name]; !exists || t == types.Any {
+		tm[name] = typ
+	} else if typ != types.Any && t != typ {
+		return types.Any, &TypeError{
+			ExpectedType: typ,
+			Name:         name,
+			// Val:          string(v.Typ),
+		}
+	}
+
+	return typ, nil
 }
 
-func parseExpressionTypes(expr parser.Expr, tm TypeMap, errs *[]error) types.Type {
+func parseNodes(ast []parser.Node, tm TypeMap, context renderer.Context, errs *TypeErrors) {
+	for _, node := range ast {
+		switch n := node.(type) {
+		case *parser.ExprNode:
+			parseExpressionTypes(n.Body, tm, types.Any, errs)
+		case *parser.IfNode:
+			parseExpressionTypes(n.IfTag.Expr, tm, types.Boolean, errs)
+			parseNodes(n.Main, tm, context, errs)
+
+			for _, elseIf := range n.ElseIfs {
+				parseExpressionTypes(elseIf.Tag.Expr, tm, types.Boolean, errs)
+				parseNodes(elseIf.Body, tm, context, errs)
+			}
+
+			parseExpressionTypes(n.IfTag.Expr, tm, types.Boolean, errs)
+			parseNodes(n.Main, tm, context, errs)
+		}
+	}
+}
+
+func parseExpressionTypes(expr parser.Expr, tm TypeMap, typ types.Type, errs *TypeErrors) types.Type {
 	switch e := expr.(type) {
 	case *parser.Ident:
-		if e.Name == "true" || e.Name == "false" {
-			return types.Boolean
+		t, err := tm.addToTypeMap(e.Name, typ)
+		if err != nil {
+			errs.Add(err)
 		}
 
-		if err := addToTypeMap(Symbol{
-			Name: e.Name,
-			Typ:  types.Any,
-		}, tm); err != nil {
-			*errs = append(*errs, err)
-		}
-
-		return types.Any
+		return t
 	case *parser.StringLit:
 		return e.Value.Type()
 	case *parser.NumberLit:
 		return e.Value.Type()
+	case *parser.FilterExpr:
+		parseExpressionTypes(e.Expr, tm, types.String, errs)
 	case *parser.TernaryExpr:
-		parseExpressionTypes(e.Condition, tm, errs)
-		parseExpressionTypes(e.TrueExpr, tm, errs)
-		parseExpressionTypes(e.FalseExpr, tm, errs)
+		parseExpressionTypes(e.Condition, tm, types.Boolean, errs)
+		parseExpressionTypes(e.TrueExpr, tm, types.Any, errs)
+		parseExpressionTypes(e.FalseExpr, tm, types.Any, errs)
 	case *parser.BinaryExpr:
-		// t1 := parseExpressionTypes(e.X, tm, errs)
-		// t2 := parseExpressionTypes(e.Y, tm, errs)
-
-		// DO NOT DELETE JUST IN CASE
-		// if e.Op == token.ADD {
-		// 	if t1 == types.String || t2 == types.String {
-		// 		// If one side is a string, enforce string type
-		// 		if ident, ok := e.X.(parser.Ident); ok {
-		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
-		// 				*errs = append(*errs, err)
-		// 			}
-		// 		}
-		// 		if ident, ok := e.Y.(parser.Ident); ok {
-		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.String}, tm); err != nil {
-		// 				*errs = append(*errs, err)
-		// 			}
-		// 		}
-		// 		return types.String
-		// 	} else if t1 == types.Number || t2 == types.Number {
-		// 		// If one side is a number, enforce number type
-		// 		if ident, ok := e.X.(parser.Ident); ok {
-		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
-		// 				*errs = append(*errs, err)
-		// 			}
-		// 		}
-		// 		if ident, ok := e.Y.(parser.Ident); ok {
-		// 			if err := addToTypeMap(Symbol{Name: ident.Name, Typ: types.Number}, tm); err != nil {
-		// 				*errs = append(*errs, err)
-		// 			}
-		// 		}
-
-		// 		return types.Number
-		// 	}
-		// }
+		switch e.Op.Kind {
+		case token.GRTR, token.LESS, token.LEQ, token.GEQ:
+			parseExpressionTypes(e.X, tm, types.Number, errs)
+			parseExpressionTypes(e.Y, tm, types.Number, errs)
+		default:
+			parseExpressionTypes(e.X, tm, types.Any, errs)
+			parseExpressionTypes(e.Y, tm, types.Any, errs)
+		}
 
 		return types.Any
 	}

@@ -274,7 +274,7 @@ func (p *parser) parseElses(ifStmt *IfNode) error {
 				return err
 			}
 
-			ifStmt.ElseBody = Clause{
+			ifStmt.Else = Clause{
 				Tag:  StmtTag{PreWs: preTagWs},
 				Body: elseBody,
 			}
@@ -373,7 +373,7 @@ func (p *parser) parseIfStmt(preWs string) (Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	ifStmt.MainBody = body
+	ifStmt.Main = body
 
 	if err := p.parseElses(&ifStmt); err != nil {
 		return nil, err

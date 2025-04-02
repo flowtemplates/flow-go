@@ -24,7 +24,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				return
 			}
 
-			if got != tc.expected {
+			if string(got) != tc.expected {
 				t.Errorf("Input: %q\nMismatch.\nExpected:\n%q\nGot:\n%q", tc.input, tc.expected, got)
 			}
 		})

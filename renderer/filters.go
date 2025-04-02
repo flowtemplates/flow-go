@@ -57,7 +57,7 @@ var filtersMap = map[string]filter{
 	},
 }
 
-func applyFilter(name string, v value.Valueable) (value.Valueable, error) {
+func callFilter(name string, v value.Valueable) (value.Valueable, error) {
 	f, ok := filtersMap[name]
 	if !ok {
 		return nil, fmt.Errorf("filter %s is not declared", name)

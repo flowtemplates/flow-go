@@ -100,7 +100,7 @@ func (f *formatter) writeNode(node parser.Node) error {
 			return err
 		}
 
-		for _, node := range n.MainBody {
+		for _, node := range n.Main {
 			if err := f.writeNode(node); err != nil {
 				return err
 			}
@@ -118,10 +118,10 @@ func (f *formatter) writeNode(node parser.Node) error {
 			}
 		}
 
-		if len(n.ElseBody.Body) > 0 {
-			f.writeClause(n.ElseBody.Tag.PreWs, token.ELSE)
+		if len(n.Else.Body) > 0 {
+			f.writeClause(n.Else.Tag.PreWs, token.ELSE)
 
-			for _, node := range n.ElseBody.Body {
+			for _, node := range n.Else.Body {
 				if err := f.writeNode(node); err != nil {
 					return err
 				}
@@ -233,7 +233,7 @@ func (f *formatter) writeExpr(expr parser.Expr) error {
 
 		f.buf.WriteString(e.Filter.Name)
 	default:
-		return fmt.Errorf("unknown expression type: %#v", e)
+		return fmt.Errorf("unknown expression type: %T", e)
 	}
 
 	return nil

@@ -4,33 +4,61 @@ import (
 	"testing"
 
 	"github.com/flowtemplates/flow-go/analyzer"
-	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/types"
 )
 
 func TestGetTypeMap(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: "Plain text",
-			str:  "Hello world",
-			input: []parser.Node{
-				&parser.TextNode{
-					Val: []string{"Hello world"},
-				},
+			name:     "Plain text",
+			input:    "Hello world",
+			expected: analyzer.TypeMap{},
+		},
+		{
+			name:  "Single var",
+			input: "{{ name }}",
+			expected: analyzer.TypeMap{
+				"name": types.Any,
 			},
-			expected:    analyzer.TypeMap{},
+		},
+		{
+			name:  "String filter",
+			input: "{{ name -> upper }}",
+			expected: analyzer.TypeMap{
+				"name": types.String,
+			},
+		},
+		{
+			name:  "Var equal var",
+			input: "{{ name == surname }}",
+			expected: analyzer.TypeMap{
+				"name":    types.Any,
+				"surname": types.Any,
+			},
 			errExpected: false,
 		},
 		{
-			name: "Single var",
-			str:  "{{name}}",
-			input: []parser.Node{
-				&parser.ExprNode{
-					Body: &parser.Ident{Name: "name"},
-				},
-			},
+			name:  "Var greater than var",
+			input: "{{ name > surname }}",
 			expected: analyzer.TypeMap{
-				"name": types.Any,
+				"name":    types.Number,
+				"surname": types.Number,
+			},
+			errExpected: false,
+		},
+		{
+			name:  "Var greater than number",
+			input: "{{ name > 1 }}",
+			expected: analyzer.TypeMap{
+				"name": types.Number,
+			},
+			errExpected: false,
+		},
+		{
+			name:  "Var greater than string",
+			input: "{{ name > 'asd'}}",
+			expected: analyzer.TypeMap{
+				"name": types.Number,
 			},
 			errExpected: false,
 		},
@@ -120,26 +148,48 @@ func TestGetTypeMap(t *testing.T) {
 		// 	errExpected: false,
 		// },
 		{
-			name: "If statement",
-			str:  "{%if var%}\ntext\n{%end%}",
-			input: []parser.Node{
-				&parser.IfNode{
-					IfTag: parser.StmtTagWithExpr{
-						Expr: &parser.Ident{
-							Name: "var",
-						},
-					},
-					MainBody: []parser.Node{
-						&parser.TextNode{
-							Val: []string{"\n", "text", "\n"},
-						},
-					},
-				},
-			},
+			name: "If statement on var",
+			input: `
+{% if var %}
+text
+{% end %}
+`[1:],
 			expected: analyzer.TypeMap{
 				"var": types.Boolean,
 			},
-			errExpected: false,
+		},
+		{
+			name: "Else-if statement on var",
+			input: `
+{% if false %}
+text
+{% else if var %}
+text2
+{% end %}
+`[1:],
+			expected: analyzer.TypeMap{
+				"var": types.Boolean,
+			},
+		},
+		{
+			name: "Nested If-else-if statements",
+			input: `
+{% if var1 %}
+text
+{% else if var2 %}
+{% if var3 %}
+text123
+{% else if var4 %}
+123
+{% end %}
+{% end %}
+`[1:],
+			expected: analyzer.TypeMap{
+				"var1": types.Boolean,
+				"var2": types.Boolean,
+				"var3": types.Boolean,
+				"var4": types.Boolean,
+			},
 		},
 	}
 	runTestCases(t, testCases)

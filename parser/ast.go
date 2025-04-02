@@ -126,11 +126,11 @@ type (
 	}
 
 	IfNode struct {
-		IfTag    StmtTagWithExpr
-		MainBody []Node
-		ElseIfs  []ClauseWithExpr
-		ElseBody Clause
-		EndTag   StmtTag
+		IfTag   StmtTagWithExpr
+		Main    []Node
+		ElseIfs []ClauseWithExpr
+		Else    Clause
+		EndTag  StmtTag
 	}
 
 	SwitchNode struct {

@@ -9,46 +9,40 @@ import (
 func TestExpressions(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:        "Plain text",
-			input:       "Hello world",
-			expected:    "Hello world",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Plain text",
+			input:    "Hello world",
+			expected: "Hello world",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Int literal",
-			input:       "{{1}}",
-			expected:    "1",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Int literal",
+			input:    "{{1}}",
+			expected: "1",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Float literal",
-			input:       "{{1.1}}",
-			expected:    "1.1",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Float literal",
+			input:    "{{1.1}}",
+			expected: "1.1",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Boolean literal",
-			input:       "{{true}}",
-			expected:    "",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Boolean literal",
+			input:    "{{true}}",
+			expected: "",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "String literal in double quotes",
-			input:       `{{"word"}}`,
-			expected:    "word",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "String literal in double quotes",
+			input:    `{{"word"}}`,
+			expected: "word",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "String literal in single quotes",
-			input:       `{{'word'}}`,
-			expected:    "word",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "String literal in single quotes",
+			input:    `{{'word'}}`,
+			expected: "word",
+			scope:    renderer.Scope{},
 		},
 		// {
 		// 	name:     "Addition",
@@ -68,7 +62,6 @@ func TestExpressions(t *testing.T) {
 		// 		},
 		// 	},
 		// 	scope:       renderer.Scope{},
-		// 	errExpected: false,
 		// },
 		// {
 		// 	name:     "Subtraction",
@@ -88,7 +81,6 @@ func TestExpressions(t *testing.T) {
 		// 		},
 		// 	},
 		// 	scope:       renderer.Scope{},
-		// 	errExpected: false,
 		// },
 		{
 			name:     "Expression with string var",
@@ -97,7 +89,6 @@ func TestExpressions(t *testing.T) {
 			scope: renderer.Scope{
 				"name": "useuse",
 			},
-			errExpected: false,
 		},
 		{
 			name:     "Expression with number var",
@@ -106,7 +97,6 @@ func TestExpressions(t *testing.T) {
 			scope: renderer.Scope{
 				"age": 1,
 			},
-			errExpected: false,
 		},
 		{
 			name:     "Expression with boolean var",
@@ -115,7 +105,6 @@ func TestExpressions(t *testing.T) {
 			scope: renderer.Scope{
 				"flag": false,
 			},
-			errExpected: false,
 		},
 		{
 			name: "Multiple expressions",
@@ -131,7 +120,6 @@ From flow templates
 				"name": "world",
 				"flow": "flow",
 			},
-			errExpected: false,
 		},
 	}
 	runTestCases(t, testCases)
@@ -194,25 +182,22 @@ func TestOperators(t *testing.T) {
 func TestTernaries(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:        "Simple ternary with true",
-			input:       "{{true?1:2}}",
-			expected:    "1",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Simple ternary with true",
+			input:    "{{true?1:2}}",
+			expected: "1",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Simple ternary with false",
-			input:       "{{false?1:2}}",
-			expected:    "2",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Simple ternary with false",
+			input:    "{{false?1:2}}",
+			expected: "2",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Simple ternary with true and some text around",
-			input:       "arr[{{false?1:2}}]",
-			expected:    "arr[2]",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Simple ternary with true and some text around",
+			input:    "arr[{{false?1:2}}]",
+			expected: "arr[2]",
+			scope:    renderer.Scope{},
 		},
 		{
 			name:     "Simple ternary",
@@ -221,7 +206,6 @@ func TestTernaries(t *testing.T) {
 			scope: renderer.Scope{
 				"flag": true,
 			},
-			errExpected: false,
 		},
 		{
 			name:     "Do-else ternary",
@@ -230,35 +214,30 @@ func TestTernaries(t *testing.T) {
 			scope: renderer.Scope{
 				"flag": true,
 			},
-			errExpected: false,
 		},
 		{
-			name:        "Ternary with truthy number condition",
-			input:       "{{1?1:2}}",
-			expected:    "1",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Ternary with truthy number condition",
+			input:    "{{1?1:2}}",
+			expected: "1",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Ternary with falsy number condition",
-			input:       "{{0?1:2}}",
-			expected:    "2",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Ternary with falsy number condition",
+			input:    "{{0?1:2}}",
+			expected: "2",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Ternary with truthy string condition",
-			input:       `{{"a"?1:2}}`,
-			expected:    "1",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Ternary with truthy string condition",
+			input:    `{{"a"?1:2}}`,
+			expected: "1",
+			scope:    renderer.Scope{},
 		},
 		{
-			name:        "Ternary with falsy string condition",
-			input:       `{{""?1:2}}`,
-			expected:    "2",
-			scope:       renderer.Scope{},
-			errExpected: false,
+			name:     "Ternary with falsy string condition",
+			input:    `{{""?1:2}}`,
+			expected: "2",
+			scope:    renderer.Scope{},
 		},
 		{
 			name:     "Ternary with 3 vars",
@@ -269,7 +248,6 @@ func TestTernaries(t *testing.T) {
 				"a":    "foo",
 				"b":    "bar",
 			},
-			errExpected: false,
 		},
 		{
 			name:     "Ternary with truthy equal",
@@ -278,7 +256,6 @@ func TestTernaries(t *testing.T) {
 			scope: renderer.Scope{
 				"flag": 3,
 			},
-			errExpected: false,
 		},
 		{
 			name:     "Ternary with falsy equal",
@@ -287,7 +264,6 @@ func TestTernaries(t *testing.T) {
 			scope: renderer.Scope{
 				"flag": 3,
 			},
-			errExpected: false,
 		},
 	}
 	runTestCases(t, testCases)
@@ -295,6 +271,18 @@ func TestTernaries(t *testing.T) {
 
 func TestFilters(t *testing.T) {
 	testCases := []testCase{
+		{
+			name:     "Empty string upper",
+			input:    "{{ '' -> upper }}",
+			expected: "",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "String with emoji upper",
+			input:    "{{ '💀' -> upper }}",
+			expected: "💀",
+			scope:    renderer.Scope{},
+		},
 		{
 			name:     "Upper",
 			input:    "{{ s -> upper }}",
@@ -325,14 +313,6 @@ func TestFilters(t *testing.T) {
 			name:     "Lower",
 			input:    "{{ s -> lower }}",
 			expected: "hello world",
-			scope: renderer.Scope{
-				"s": "Hello world",
-			},
-		},
-		{
-			name:     "Length",
-			input:    "{{ s -> length }}",
-			expected: "11",
 			scope: renderer.Scope{
 				"s": "Hello world",
 			},
@@ -391,6 +371,34 @@ func TestFilters(t *testing.T) {
 			expected: "Hello world",
 			scope: renderer.Scope{
 				"s": "  Hello world 	",
+			},
+		},
+		{
+			name:     "String length",
+			input:    "{{ s -> length }}",
+			expected: "11",
+			scope: renderer.Scope{
+				"s": "Hello world",
+			},
+		},
+		{
+			name:     "Number length",
+			input:    "{{ 123 -> length }}",
+			expected: "3",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Boolean length",
+			input:    "{{ true -> length }}",
+			expected: "0",
+			scope:    renderer.Scope{},
+		},
+		{
+			name:     "Var name 'length'",
+			input:    "{{ length -> length }}",
+			expected: "3",
+			scope: renderer.Scope{
+				"length": "huh",
 			},
 		},
 	}

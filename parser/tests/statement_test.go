@@ -26,7 +26,7 @@ text
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"text",
@@ -53,7 +53,7 @@ text
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"text",
@@ -77,7 +77,7 @@ text
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{"text"},
 						},
@@ -101,7 +101,7 @@ text
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"text",
@@ -128,7 +128,7 @@ text
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"\t",
@@ -163,7 +163,7 @@ text
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{"1", "\n"},
 						},
@@ -176,7 +176,7 @@ text
 									Name: "name",
 								},
 							},
-							MainBody: []parser.Node{
+							Main: []parser.Node{
 								&parser.TextNode{
 									Val: []string{"text", "\n"},
 								},
@@ -204,7 +204,7 @@ text
 							Name: "bar",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"1",
@@ -249,7 +249,7 @@ text
 							Name: "bar",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"1",
@@ -274,7 +274,7 @@ text
 							},
 						},
 					},
-					ElseBody: parser.Clause{
+					Else: parser.Clause{
 						Body: []parser.Node{
 							&parser.TextNode{
 								Val: []string{
@@ -380,7 +380,7 @@ Text{%if var%}
 							Name: "var",
 						},
 					},
-					MainBody: []parser.Node{
+					Main: []parser.Node{
 						&parser.TextNode{
 							Val: []string{
 								"123",

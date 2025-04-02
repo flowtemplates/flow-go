@@ -80,20 +80,38 @@ text
 `[1:],
 			scope: renderer.Scope{},
 		},
-		// 		{
-		// 			name: "If-else-if",
-		// 			input: `
-		// {%if false%}
-		// text
-		// {%else if true%}
-		// 123
-		// {%end%}
-		// `[1:],
-		// 			expected: `
-		// 123
-		// `[1:],
-		// 			scope: renderer.Scope{},
-		// 		},
+		{
+			name: "If-else-if",
+			input: `
+{%if false%}
+text
+{%else if true%}
+123
+{%end%}
+`[1:],
+			expected: `
+123
+`[1:],
+			scope: renderer.Scope{},
+		},
+		{
+			name: "Nested If-else-if statements",
+			input: `
+{% if false %}
+text
+{% else if true %}
+{% if false %}
+text123
+{% else if true %}
+123
+{% end %}
+{% end %}
+`[1:],
+			expected: `
+123
+`[1:],
+			scope: renderer.Scope{},
+		},
 		{
 			name: "Nested if-else statements",
 			input: `
@@ -129,6 +147,104 @@ function foo(n: number): number {
 			input:    "{%if not false %}\ntext\n{%end%}",
 			expected: "text\n",
 			scope:    renderer.Scope{},
+		},
+	}
+	runTestCases(t, testCases)
+}
+
+func TestSwitchStatements(t *testing.T) {
+	testCases := []testCase{
+		{
+			name: "Switch with 1 case",
+			input: `
+{% switch a %}
+{% case 1 %}
+Text
+{% end %}
+`[1:],
+			expected: `
+Text
+`[1:],
+			scope: renderer.Scope{
+				"a": 1,
+			},
+		},
+		{
+			name: "False switch with 1 case",
+			input: `
+{% switch a %}
+{% case 2 %}
+Text
+{% end %}
+`[1:],
+			expected: `
+`[1:],
+			scope: renderer.Scope{
+				"a": 1,
+			},
+		},
+		{
+			name: "Switch with several cases",
+			input: `
+{% switch a %}
+{% case 1 %}
+111
+{% case 2 %}
+22
+{% case 4 %}
+33
+{% end %}
+`[1:],
+			expected: `
+22
+`[1:],
+			scope: renderer.Scope{
+				"a": 2,
+			},
+		},
+		{
+			name: "Switch-default with 1 case",
+			input: `
+{% switch a %}
+{% case 1 %}
+Text
+{% default %}
+Text2
+{% end %}
+`[1:],
+			expected: `
+Text2
+`[1:],
+			scope: renderer.Scope{
+				"a": 2,
+			},
+		},
+		{
+			name: "Switch on string with number",
+			input: `
+{% switch 'foo' %}
+{% case 1 %}
+Text
+{% end %}
+`[1:],
+			expected: `
+`[1:],
+			scope: renderer.Scope{},
+		},
+		{
+			name: "Switch on string convertable to number with number",
+			input: `
+{% switch '2' %}
+{% case 1 %}
+Text
+{% case 2 %}
+text2
+{% end %}
+`[1:],
+			expected: `
+text2
+`[1:],
+			scope: renderer.Scope{},
 		},
 	}
 	runTestCases(t, testCases)

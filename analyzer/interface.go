@@ -1,70 +1,58 @@
 package analyzer
 
 import (
+	"fmt"
+
 	"github.com/flowtemplates/flow-go/parser"
-	"github.com/flowtemplates/flow-go/types"
+	"github.com/flowtemplates/flow-go/renderer"
 )
 
-func Typecheck(scope map[string]string, tm TypeMap) []TypeError {
-	errs := []TypeError{}
-	for name, typ := range tm {
-		if typ == types.Any {
-			continue
-		}
+// func Typecheck(scope renderer.Scope, tm TypeMap) []TypeError {
+// 	errs := []TypeError{}
+// 	for name, typ := range tm {
+// 		if typ == types.Any {
+// 			continue
+// 		}
 
-		value, ok := scope[name]
-		if !ok {
-			scope[name] = typ.GetDefaultValue()
-		} else if !typ.IsValid(value) {
-			errs = append(errs, TypeError{
-				ExpectedType: typ,
-				Name:         name,
-				Val:          value,
-			})
-		}
-	}
+// 		value, ok := scope[name]
+// 		if !ok {
+// 			scope[name] = typ.GetDefaultValue()
+// 		} else if !typ.IsValid(value) {
+// 			errs = append(errs, TypeError{
+// 				ExpectedType: typ,
+// 				Name:         name,
+// 				Val:          value,
+// 			})
+// 		}
+// 	}
 
-	if len(errs) != 0 {
-		return errs
-	}
+// 	if len(errs) != 0 {
+// 		return errs
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func GetTypeMapFromAst(ast []parser.Node, tm TypeMap) []error {
-	errs := []error{}
-	for _, node := range ast {
-		switch n := node.(type) {
-		case *parser.ExprNode:
-			parseExpressionTypes(n.Body, tm, &errs)
-		case *parser.IfNode:
-			switch e := n.IfTag.Expr.(type) {
-			case *parser.Ident:
-				if err := addToTypeMap(Symbol{
-					Name: e.Name,
-					Typ:  types.Boolean,
-				}, tm); err != nil {
-					errs = append(errs, err)
-				}
-			}
-		}
-	}
+func TypeMapFromAst(ast []parser.Node, tm TypeMap, scope renderer.Scope) *TypeErrors {
+	context := renderer.ScopeToContext(scope)
+	errs := TypeErrors{}
+	parseNodes(ast, tm, context, &errs)
 
 	if len(errs) > 0 {
-		return errs
+		return &errs
 	}
 
 	return nil
 }
 
-func GetTypeMapFromBytes(input []byte, tm TypeMap) error {
+func TypeMapFromBytes(input []byte, tm TypeMap, scope renderer.Scope) error {
 	ast, err := parser.AstFromBytes(input)
 	if err != nil {
-		return err
+		return fmt.Errorf("ast from bytes: %w", err)
 	}
 
-	if errs := GetTypeMapFromAst(ast, tm); len(errs) != 0 {
-		return errs[0]
+	if errs := TypeMapFromAst(ast, tm, scope); errs != nil {
+		return errs
 	}
 
 	return nil
