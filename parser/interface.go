@@ -6,6 +6,7 @@ import (
 
 func AstFromBytes(input []byte) (Ast, error) {
 	tokens := lexer.TokensFromBytes(input)
+
 	ast, err := newParser(tokens).parse()
 	if err != nil {
 		return nil, err

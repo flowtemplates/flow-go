@@ -26,7 +26,7 @@ func equal(gotTokens []token.Token, expectedTokens []token.Token) error {
 		if expected.IsValueable() {
 			expectedValue = expected.Val
 		} else {
-			expectedValue = token.TokenString(expected.Kind)
+			expectedValue = expected.Kind.String()
 		}
 
 		if got.Val != expectedValue {
@@ -44,6 +44,8 @@ type testCase struct {
 }
 
 func runTestCases(t *testing.T, testCases []testCase) {
+	t.Helper()
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tokens := lexer.TokensFromBytes([]byte(tc.input))

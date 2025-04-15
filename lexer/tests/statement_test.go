@@ -301,7 +301,7 @@ Sometext
 func TestSwitchStatement(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: "Emtpy switch",
+			name: "Empty switch",
 			input: `
 {%switch name%}
 {%case a%}

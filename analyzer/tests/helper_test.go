@@ -6,30 +6,43 @@ import (
 	"testing"
 
 	"github.com/flowtemplates/flow-go/analyzer"
-	"github.com/flowtemplates/flow-go/renderer"
 )
 
 type testCase struct {
 	name        string
 	input       string
 	expected    analyzer.TypeMap
-	errExpected bool
+	errExpected analyzer.TypeErrors
 }
 
 func runTestCases(t *testing.T, testCases []testCase) {
+	t.Helper()
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := make(analyzer.TypeMap)
-			err := analyzer.TypeMapFromBytes([]byte(tc.input), got, renderer.Scope{})
-			if (err != nil) != tc.errExpected {
-				t.Errorf("Input: %q\nUnexpected error: %v", tc.input, err)
-				return
-			}
+			a := analyzer.New()
 
-			a, _ := json.MarshalIndent(tc.expected, "", "  ")
-			b, _ := json.MarshalIndent(got, "", "  ")
-			if !slices.Equal(a, b) {
-				t.Errorf("Input: %q\nTypeMap mismatch.\nExpected:\n%s\nGot:\n%s", tc.input, a, b)
+			err := a.TypeMapFromBytes([]byte(tc.input))
+
+			switch {
+			case tc.errExpected != nil:
+				x, _ := json.MarshalIndent(tc.errExpected, "", "  ")
+				y, _ := json.MarshalIndent(a.Errs, "", "  ")
+
+				if (len(a.Errs) == 0) || !slices.Equal(x, y) {
+					t.Errorf("Input: %q\nTypeMap mismatch.\nExpected:\n%q\nGot:\n%q", tc.input, x, y)
+				}
+
+			case err != nil:
+				t.Errorf("Input: %q\nUnexpected parsing error: %v", tc.input, a.Errs)
+
+			default:
+				x, _ := json.MarshalIndent(tc.expected, "", "  ")
+				y, _ := json.MarshalIndent(a.Tm, "", "  ")
+
+				if !slices.Equal(x, y) {
+					t.Errorf("Input: %q\nTypeMap mismatch.\nExpected:\n%s\nGot:\n%s", tc.input, x, y)
+				}
 			}
 		})
 	}

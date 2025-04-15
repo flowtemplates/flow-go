@@ -8,9 +8,8 @@ import (
 )
 
 type TypeError struct {
-	ExpectedType types.Type
+	ExpectedType types.PrimitiveType
 	Name         string
-	Val          string
 }
 
 //	func (e *TypeError) String() string {
@@ -21,12 +20,13 @@ func (e TypeError) Error() string {
 	return fmt.Sprintf("TypeError: Variable '%s' expected type '%s'", e.Name, e.ExpectedType)
 }
 
-type TypeErrors []TypeError
+type TypeErrors []TypeError //nolint: recvcheck
 
 func (l TypeErrors) Error() string {
 	switch len(l) {
 	case 0:
 		return "no errors"
+
 	case 1:
 		return l[0].Error()
 	}

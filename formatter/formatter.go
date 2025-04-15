@@ -28,7 +28,7 @@ func (f *formatter) writeLineBreak() {
 }
 
 func (f *formatter) writeToken(kind token.Kind) {
-	f.buf.WriteString(token.TokenString(kind))
+	f.buf.WriteString(kind.String())
 }
 
 func (f *formatter) writeClause(preWs string, tokens ...token.Kind) {
@@ -70,6 +70,7 @@ func (f *formatter) writeNode(node parser.Node) error {
 	switch n := node.(type) {
 	case *parser.TextNode:
 		f.buf.WriteString(strings.Join(n.Val, ""))
+
 	case *parser.CommNode:
 		f.buf.WriteString(n.PreWs)
 		f.writeToken(token.LCOMM)
@@ -81,6 +82,7 @@ func (f *formatter) writeNode(node parser.Node) error {
 		f.writeToken(token.RCOMM)
 
 		f.buf.WriteString(n.PostLB)
+
 	case *parser.ExprNode:
 		f.writeToken(token.LEXPR)
 		f.writeSpace()
@@ -91,10 +93,12 @@ func (f *formatter) writeNode(node parser.Node) error {
 
 		f.writeSpace()
 		f.writeToken(token.REXPR)
+
 	case *parser.GenifNode:
 		if err := f.writeClauseWithExpr(n.PreWs, n.Expr, token.GENIF); err != nil {
 			return err
 		}
+
 	case *parser.IfNode:
 		if err := f.writeClauseWithExpr(n.IfTag.PreWs, n.IfTag.Expr, token.IF); err != nil {
 			return err
@@ -129,6 +133,7 @@ func (f *formatter) writeNode(node parser.Node) error {
 		}
 
 		f.writeClause(n.EndTag.PreWs, token.END)
+
 	case *parser.SwitchNode:
 		if err := f.writeClauseWithExpr(n.SwitchTag.PreWs, n.SwitchTag.Expr, token.SWITCH); err != nil {
 			return err
@@ -157,6 +162,7 @@ func (f *formatter) writeNode(node parser.Node) error {
 		}
 
 		f.writeClause(n.EndTag.PreWs, token.END)
+
 	default:
 		return fmt.Errorf("unknown node type: %s", n)
 	}
@@ -170,17 +176,22 @@ func (f *formatter) writeExpr(expr parser.Expr) error {
 		f.buf.WriteByte(e.Quote)
 		f.buf.WriteString(e.Value.AsString())
 		f.buf.WriteByte(e.Quote)
+
 	case *parser.NumberLit:
 		f.buf.WriteString(e.Value.AsString())
+
 	case *parser.ParenExpr:
 		f.writeToken(token.LPAREN)
+
 		if err := f.writeExpr(e.Expr); err != nil {
 			return err
 		}
 
 		f.writeToken(token.RPAREN)
+
 	case *parser.UnaryExpr:
 		f.writeToken(e.Op.Kind)
+
 		if e.Op.Kind.IsOneOfMany(token.NOT) {
 			f.writeSpace()
 		}
@@ -188,6 +199,7 @@ func (f *formatter) writeExpr(expr parser.Expr) error {
 		if err := f.writeExpr(e.Expr); err != nil {
 			return err
 		}
+
 	case *parser.BinaryExpr:
 		if err := f.writeExpr(e.X); err != nil {
 			return err
@@ -200,8 +212,10 @@ func (f *formatter) writeExpr(expr parser.Expr) error {
 		if err := f.writeExpr(e.Y); err != nil {
 			return err
 		}
+
 	case *parser.Ident:
 		f.buf.WriteString(e.Name)
+
 	case *parser.TernaryExpr:
 		if err := f.writeExpr(e.Condition); err != nil {
 			return err
@@ -222,6 +236,7 @@ func (f *formatter) writeExpr(expr parser.Expr) error {
 		if err := f.writeExpr(e.FalseExpr); err != nil {
 			return err
 		}
+
 	case *parser.FilterExpr:
 		if err := f.writeExpr(e.Expr); err != nil {
 			return err
@@ -232,6 +247,7 @@ func (f *formatter) writeExpr(expr parser.Expr) error {
 		f.writeSpace()
 
 		f.buf.WriteString(e.Filter.Name)
+
 	default:
 		return fmt.Errorf("unknown expression type: %T", e)
 	}

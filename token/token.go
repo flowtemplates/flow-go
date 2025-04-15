@@ -8,18 +8,39 @@ import (
 type Kind int
 
 func (k Kind) String() string {
-	return TokenString(k)
+	return tokens[k]
+}
+
+func (k Kind) Bytes() []byte {
+	return []byte(tokens[k])
+}
+
+func (k Kind) Rune() rune {
+	return rune(tokens[k][0])
 }
 
 func (k Kind) IsOneOfMany(types ...Kind) bool {
 	return slices.Contains(types, k)
 }
 
+func (k Kind) IsValueable() bool {
+	return valuable_beg < k && k < valuable_end
+}
+
+func (k Kind) IsComparasionOp() bool {
+	return (comparison_op_beg < k && k < comparison_op_end) ||
+		(AND < k && k < ISNOT)
+}
+
+func (k Kind) IsLogicalOp() bool {
+	return k.IsOneOfMany(AND, LAND, OR, LOR)
+}
+
 const (
 	EOF Kind = iota
 	ILLEGAL
 
-	valueable_beg
+	valuable_beg
 	COMM_TEXT
 	LNBR
 	TEXT
@@ -34,22 +55,11 @@ const (
 	// Errors
 	NOT_TERMINATED_STR
 	errors_end
-	valueable_end
+	valuable_end
 
 	operator_beg
 	// Operators and delimiters
 	RARR // ->
-
-	LAND // &&
-	LOR  // ||
-	comparison_op_beg
-	EQL  // ==
-	NEQL // !=
-	LEQ  // <=
-	GEQ  // >=
-	LESS // <
-	GRTR // >
-	comparison_op_end
 
 	// ASSIGN     // =
 	// ADD_ASSIGN // +=
@@ -63,10 +73,6 @@ const (
 	// MUL // *
 	// DIV // /
 	// MOD // %
-
-	QUESTION // ?
-	COLON    // :
-	EXCL     // !
 
 	LEXPR // {{
 	REXPR // }}
@@ -85,10 +91,32 @@ const (
 	RPAREN // )
 	RBRACK // ]
 	RBRACE // }
-	operator_end
+
+	comparison_op_beg
+	EQL  // ==
+	NEQL // !=
+	LEQ  // <=
+	GEQ  // >=
+	LESS // <
+	GRTR // >
+	LAND // &&
+	LOR  // ||
+	comparison_op_end
+
+	QUESTION // ?
+	COLON    // :
+	EXCL     // !
 
 	keyword_beg
 	// Keywords
+
+	AND   // and
+	OR    // or
+	IS    // is
+	NOT   // not
+	ISNOT // is not
+
+	operator_end
 	FOR     // for
 	LET     // let
 	IF      // if
@@ -97,14 +125,9 @@ const (
 	SWITCH  // switch
 	END     // end
 	CASE    // case
+	DO      // do
 	DEFAULT // default
 	EXTEND  // extend
-	AND     // and
-	OR      // or
-	DO      // do
-	IS      // is
-	NOT     // not
-	ISNOT   // is not
 	keyword_end
 )
 
@@ -193,22 +216,10 @@ const (
 	DQUOTE rune = '"'
 )
 
-func TokenString(k Kind) string {
-	return tokens[k]
-}
-
-func TokenBytes(k Kind) []byte {
-	return []byte(tokens[k])
-}
-
-func TokenRune(k Kind) rune {
-	return rune(tokens[k][0])
-}
-
 type Token struct {
-	Kind Kind
-	Val  string
-	Pos  Position
+	Kind
+	Val string
+	Pos Position
 }
 
 func (t Token) String() string {
@@ -216,29 +227,41 @@ func (t Token) String() string {
 		switch t.Kind {
 		case EOF:
 			return "EOF"
+
 		case TEXT:
-			return fmt.Sprintf("{Kind: %s, Val: %.10q.., Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
+			return fmt.Sprintf("{Kind: %s, Val: %.10q.., Pos: %s}", t.Kind.String(), t.Val, t.Pos)
+
 		default:
-			return fmt.Sprintf("{Kind: %s, Val: %q, Pos: %s}", TokenString(t.Kind), t.Val, t.Pos)
+			return fmt.Sprintf("{Kind: %s, Val: %q, Pos: %s}", t.Kind.String(), t.Val, t.Pos)
 		}
 	}
 
-	return fmt.Sprintf("{Kind: %s, Pos: %s}", TokenString(t.Kind), t.Pos)
-}
-
-func (t Token) IsOneOfMany(types ...Kind) bool {
-	return slices.Contains(types, t.Kind)
-}
-
-func (t Token) IsValueable() bool {
-	return valueable_beg < t.Kind && t.Kind < valueable_end
+	return fmt.Sprintf("{Kind: %s, Pos: %s}", t.Kind.String(), t.Pos)
 }
 
 func GetOperators() []Kind {
 	res := make([]Kind, operator_end-operator_beg)
 
 	for i := range int(operator_end) - int(operator_beg) {
-		res[i] = Kind(i + int(operator_beg))
+		t := Kind(i + int(operator_beg))
+
+		if t.String() != "" {
+			res[i] = t
+		}
+	}
+
+	return res
+}
+
+func GetOperatorsWithoutKw() []Kind {
+	res := make([]Kind, keyword_beg-operator_beg)
+
+	for i := range int(keyword_beg) - int(operator_beg) {
+		t := Kind(i + int(operator_beg))
+
+		if t.String() != "" {
+			res[i] = t
+		}
 	}
 
 	return res
@@ -248,20 +271,19 @@ func GetKeywords() []Kind {
 	res := make([]Kind, keyword_end-keyword_beg)
 
 	for i := range int(keyword_end) - int(keyword_beg) {
-		res[i] = Kind(i + int(keyword_beg))
+		t := Kind(i + int(keyword_beg))
+
+		if t.String() != "" {
+			res[i] = t
+		}
 	}
 
 	return res
 }
 
-func (t Token) IsComparisonOp() bool {
-	return (comparison_op_beg < t.Kind && t.Kind < comparison_op_end) ||
-		t.Kind == IS
-}
-
 func IsNotOp(r rune) bool {
-	for i := operator_beg + 1; i < operator_end; i++ {
-		t := tokens[i]
+	for i := operator_beg + 1; i < keyword_beg; i++ {
+		t := i.String()
 		if t != "" && r == rune(t[0]) {
 			return false
 		}

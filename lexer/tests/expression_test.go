@@ -841,6 +841,19 @@ func TestOperators(t *testing.T) {
 			},
 		},
 		{
+			name:  "Is with vars",
+			input: "{{age is b}}",
+			expected: []token.Token{
+				{Kind: token.LEXPR},
+				{Kind: token.IDENT, Val: "age"},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.IS},
+				{Kind: token.WS, Val: " "},
+				{Kind: token.IDENT, Val: "b"},
+				{Kind: token.REXPR},
+			},
+		},
+		{
 			name:  "is not",
 			input: "{{age is not 3}}",
 			expected: []token.Token{
@@ -924,14 +937,14 @@ func TestOperators(t *testing.T) {
 		},
 		{
 			name:  "or",
-			input: "{{var or 1}}",
+			input: "{{foo or bar}}",
 			expected: []token.Token{
 				{Kind: token.LEXPR},
-				{Kind: token.IDENT, Val: "var"},
+				{Kind: token.IDENT, Val: "foo"},
 				{Kind: token.WS, Val: " "},
 				{Kind: token.OR},
 				{Kind: token.WS, Val: " "},
-				{Kind: token.INT, Val: "1"},
+				{Kind: token.IDENT, Val: "bar"},
 				{Kind: token.REXPR},
 			},
 		},

@@ -8,32 +8,40 @@ import (
 	"github.com/flowtemplates/flow-go/types"
 )
 
-type Valueable interface {
+type Valuable interface {
 	AsString() string
 	AsBoolean() bool
 	AsNumber() float64
-	Add(Valueable) Valueable
-	Type() types.Type
+	Add(value Valuable) Valuable
+	Type() types.PrimitiveType
 }
 
-func FromAny(value any) Valueable {
+func FromAny(value any) Valuable {
 	switch v := value.(type) {
 	case string:
 		return StringValue(v)
+
 	case *string:
 		return StringValue(*v)
+
 	case float64:
 		return NumberValue(v)
+
 	case *float64:
 		return NumberValue(*v)
+
 	case int:
 		return NumberValue(v)
+
 	case *int:
 		return NumberValue(*v)
+
 	case bool:
 		return BooleanValue(v)
+
 	case *bool:
 		return BooleanValue(*v)
+
 	default:
 		panic(fmt.Sprintf("cannot convert any to Valuable: unsupported type: %T", value))
 	}
@@ -62,11 +70,11 @@ func (v StringValue) AsNumber() float64 {
 	return sum
 }
 
-func (v StringValue) Add(b Valueable) Valueable {
+func (v StringValue) Add(b Valuable) Valuable {
 	return StringValue(string(v) + b.AsString())
 }
 
-func (v StringValue) Type() types.Type {
+func (v StringValue) Type() types.PrimitiveType {
 	return types.String
 }
 
@@ -88,16 +96,17 @@ func (v BooleanValue) AsNumber() float64 {
 	return 0
 }
 
-func (v BooleanValue) Add(b Valueable) Valueable {
+func (v BooleanValue) Add(b Valuable) Valuable {
 	switch b.(type) {
 	case BooleanValue, NumberValue:
 		return NumberValue(v.AsNumber() + b.AsNumber())
+
 	default:
 		return StringValue(v.AsString() + b.AsString())
 	}
 }
 
-func (v BooleanValue) Type() types.Type {
+func (v BooleanValue) Type() types.PrimitiveType {
 	return types.Boolean
 }
 
@@ -120,15 +129,16 @@ func (v NumberValue) AsNumber() float64 {
 	return float64(v)
 }
 
-func (v NumberValue) Add(b Valueable) Valueable {
+func (v NumberValue) Add(b Valuable) Valuable {
 	switch b.(type) {
 	case BooleanValue, NumberValue:
 		return NumberValue(v.AsNumber() + b.AsNumber())
+
 	default:
 		return StringValue(v.AsString() + b.AsString())
 	}
 }
 
-func (v NumberValue) Type() types.Type {
+func (v NumberValue) Type() types.PrimitiveType {
 	return types.Number
 }

@@ -24,6 +24,7 @@ func newLexer(input []byte) *lexer {
 	l.pos = l.startPos
 
 	go l.run()
+
 	return &l
 }
 
@@ -31,11 +32,13 @@ func TokensFromBytes(source []byte) []token.Token {
 	l := newLexer(source)
 
 	var tokens []token.Token
+
 	for {
 		tok := <-l.tokensCh
 		if tok.Kind == token.EOF {
 			break
 		}
+
 		tokens = append(tokens, tok)
 	}
 
@@ -44,5 +47,6 @@ func TokensFromBytes(source []byte) []token.Token {
 
 func ChanFromBytes(source []byte) <-chan token.Token {
 	l := newLexer(source)
+
 	return l.tokensCh
 }

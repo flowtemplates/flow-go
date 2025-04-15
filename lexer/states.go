@@ -10,15 +10,16 @@ import (
 type stateFn func(*lexer) stateFn
 
 func (l *lexer) lexToken(t token.Kind, next stateFn) stateFn {
-	tokLen := len(token.TokenString(t))
+	tokLen := len(t.String())
 	l.pos.Offset += tokLen
 	l.pos.Column += tokLen
 	l.emit(t)
+
 	return next
 }
 
 func (l *lexer) startsWith(t token.Kind) bool {
-	tokBytes := token.TokenBytes(t)
+	tokBytes := t.Bytes()
 	if len(tokBytes) > 0 {
 		return bytes.HasPrefix(l.source[l.pos.Offset:], tokBytes)
 	}
@@ -39,8 +40,9 @@ func (l *lexer) tryTokens(nextState stateFn, tokens ...token.Kind) stateFn {
 // TODO: rewrite this whole CRAP
 func (l *lexer) tryKeywords(nextState stateFn) stateFn {
 	a := l.source[l.pos.Offset:]
+
 	for _, tok := range token.GetKeywords() {
-		tokBytes := token.TokenBytes(tok)
+		tokBytes := tok.Bytes()
 		if len(tokBytes) > 0 && bytes.HasPrefix(a, tokBytes) {
 			if len(l.source) < l.pos.Offset+len(tokBytes)+1 {
 				return l.lexToken(tok, nextState)
@@ -51,8 +53,9 @@ func (l *lexer) tryKeywords(nextState stateFn) stateFn {
 			}
 
 			b := l.source[l.pos.Offset+len(tokBytes):]
+
 			for _, tok2 := range token.GetOperators() {
-				tokBytes2 := token.TokenBytes(tok2)
+				tokBytes2 := tok2.Bytes()
 				if len(tokBytes2) > 0 && bytes.HasPrefix(b, tokBytes2) {
 					return l.lexToken(tok, nextState)
 				}
@@ -68,6 +71,7 @@ func lexText(l *lexer) stateFn {
 		r := l.peek()
 		if r == eof {
 			l.emit(token.TEXT)
+
 			return nil
 		}
 
@@ -75,6 +79,7 @@ func lexText(l *lexer) stateFn {
 			l.emit(token.TEXT)
 			l.next()
 			l.emit(token.LNBR)
+
 			return lexLineWhitespace(lexText)
 		}
 
@@ -84,36 +89,43 @@ func lexText(l *lexer) stateFn {
 
 		if l.startsWith(token.LEXPR) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.LEXPR, lexExpr)
 		}
 
 		if l.startsWith(token.RARR) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.RARR, lexComm)
 		}
 
 		if l.startsWith(token.LSTMT) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.LSTMT, lexStmt)
 		}
 
 		if l.startsWith(token.LCOMM) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.LCOMM, lexComm)
 		}
 
 		if l.startsWith(token.REXPR) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.REXPR, lexText)
 		}
 
 		if l.startsWith(token.RCOMM) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.RCOMM, lexLineWhitespace(lexText))
 		}
 
 		if l.startsWith(token.RSTMT) {
 			l.emit(token.TEXT)
+
 			return l.lexToken(token.RSTMT, lexLineWhitespace(lexText))
 		}
 
@@ -129,31 +141,42 @@ func lexRealExpr(nextState stateFn) stateFn {
 		if r == eof {
 			return nil
 		}
+
 		if r == '\n' || r == '\r' {
 			l.back()
+
 			return lexText
 		}
+
 		if unicode.IsSpace(r) {
 			return lexLineWhitespace(nextState)
 		}
+
 		if r == '\'' {
 			return lexSQString
 		}
+
 		if r == '"' {
 			return lexDQString
 		}
-		if r == token.TokenRune(token.LPAREN) {
+
+		if r == token.LPAREN.Rune() {
 			l.back()
+
 			return l.lexToken(token.LPAREN, nextState)
 		}
-		if r == token.TokenRune(token.RPAREN) {
+
+		if r == token.RPAREN.Rune() {
 			l.back()
+
 			return l.lexToken(token.RPAREN, nextState)
 		}
+
 		if unicode.IsDigit(r) {
 			return lexNum(nextState)
 		}
-		if token.IsNotOp(r) && r != token.TokenRune(token.PERIOD) {
+
+		if token.IsNotOp(r) && r != token.PERIOD.Rune() {
 			return lexIdent(nextState)
 		}
 
@@ -166,7 +189,7 @@ func lexExpr(l *lexer) stateFn {
 		return l.lexToken(token.REXPR, lexText)
 	}
 
-	if state := l.tryTokens(lexExpr, token.GetOperators()...); state != nil {
+	if state := l.tryTokens(lexExpr, token.GetOperatorsWithoutKw()...); state != nil {
 		return state
 	}
 
@@ -182,12 +205,14 @@ func lexComm(l *lexer) stateFn {
 	for {
 		if l.startsWith(token.RCOMM) {
 			l.emit(token.COMM_TEXT)
+
 			return l.lexToken(token.RCOMM, lexLineWhitespace(lexText))
 		}
 
 		r := l.next()
 		if r == eof {
 			l.emit(token.COMM_TEXT)
+
 			return nil
 		}
 	}
@@ -198,6 +223,7 @@ func lexNum(nextState stateFn) stateFn {
 		digits := "0123456789"
 
 		l.acceptRun(digits)
+
 		if l.accept(".") {
 			l.acceptRun(digits)
 			l.emit(token.FLOAT)
@@ -215,13 +241,18 @@ func lexSQString(l *lexer) stateFn {
 		switch r {
 		case eof:
 			l.emit(token.NOT_TERMINATED_STR)
+
 			return lexText
+
 		case '\n':
 			l.back()
 			l.emit(token.NOT_TERMINATED_STR)
+
 			return lexText
+
 		case token.SQUOTE:
 			l.emit(token.STR)
+
 			return lexExpr
 		}
 	}
@@ -234,13 +265,18 @@ func lexDQString(l *lexer) stateFn {
 		switch r {
 		case eof:
 			l.emit(token.NOT_TERMINATED_STR)
+
 			return lexText
+
 		case '\n':
 			l.back()
 			l.emit(token.NOT_TERMINATED_STR)
+
 			return lexText
+
 		case token.DQUOTE:
 			l.emit(token.STR)
+
 			return lexExpr
 		}
 	}
@@ -252,10 +288,13 @@ func lexIdent(nextState stateFn) stateFn {
 			switch r := l.next(); {
 			case r == eof:
 				l.emit(token.IDENT)
+
 				return nil
+
 			case !token.IsNotOp(r) || unicode.IsSpace(r):
 				l.back()
 				l.emit(token.IDENT)
+
 				return nextState
 			}
 		}
@@ -268,11 +307,15 @@ func lexLineWhitespace(nextState stateFn) stateFn {
 			switch r := l.peek(); {
 			case r == ' ' || r == '\t':
 				l.next()
+
 			case unicode.IsSpace(r):
 				l.emit(token.WS)
+
 				return lexText
+
 			default:
 				l.emit(token.WS)
+
 				return nextState
 			}
 		}

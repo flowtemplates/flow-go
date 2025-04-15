@@ -13,6 +13,7 @@ func (l *lexer) emit(t token.Kind) {
 			Val:  string(l.source[l.startPos.Offset:l.pos.Offset]),
 			Pos:  l.startPos,
 		}
+
 		l.startPos = l.pos
 	}
 }
@@ -21,6 +22,7 @@ func (l *lexer) run() {
 	for state := lexLineWhitespace(lexText); state != nil; {
 		state = state(l)
 	}
+
 	close(l.tokensCh)
 }
 
@@ -64,8 +66,10 @@ func (l *lexer) back() {
 func (l *lexer) peek() rune {
 	if l.pos.Offset < len(l.source) {
 		r := rune(l.source[l.pos.Offset])
+
 		return r
 	}
+
 	return eof
 }
 
@@ -78,6 +82,7 @@ func (l *lexer) accept(valid string) bool {
 	}
 
 	l.back()
+
 	return false
 }
 

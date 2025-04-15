@@ -37,7 +37,7 @@ func (e ExpectedTokensError) Error() string {
 		b = append(b, fmt.Sprintf("'%s'", e.String()))
 	}
 
-	return fmt.Sprintf("%s expected", strings.Join(b, ", "))
+	return strings.Join(b, ", ") + " expected"
 }
 
 // type ErrorList []error // nolint: errname

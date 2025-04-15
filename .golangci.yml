@@ -1,6 +1,4 @@
 version: "2"
-run:
-  relative-path-mode: gomod
 linters:
   default: none
   enable:
@@ -9,57 +7,81 @@ linters:
     - bidichk
     - bodyclose
     - canonicalheader
+    - containedctx
+    - contextcheck
     - copyloopvar
-    - cyclop
     - decorder
     - depguard
+    - dogsled
     - dupl
     - durationcheck
+    - err113
     - errcheck
     - errname
     - errorlint
+    - exhaustive
+    # - exhaustruct
     - exptostd
     - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - ginkgolinter
     - gocheckcompilerdirectives
     - gochecknoinits
     - gochecksumtype
     - goconst
     - gocritic
     - gocyclo
+    - goheader
     - gomoddirectives
+    - gomodguard
     - goprintffuncname
     - gosec
+    - gosmopolitan
     - govet
+    - grouper
     - iface
+    - importas
+    - inamedparam
     - ineffassign
+    - interfacebloat
     - intrange
     - lll
     - loggercheck
+    - maintidx
     - makezero
     - mirror
+    - misspell
     - musttag
     - nakedret
     - nilerr
     - nilnesserr
+    - nlreturn
     - noctx
+    # - nolintlint
     - nonamedreturns
     - nosprintfhostport
+    # - paralleltest
     - perfsprint
     - prealloc
     - predeclared
     - promlinter
     - protogetter
     - reassign
+    - recvcheck
     - revive
     - rowserrcheck
     - sloglint
     - spancheck
     - sqlclosecheck
     - staticcheck
+    - tagalign
+    - tagliatelle
     - testableexamples
     - testifylint
     - testpackage
-    - tparallel
+    - thelper
     - unconvert
     - unparam
     - unused
@@ -68,24 +90,73 @@ linters:
     - wastedassign
     - whitespace
     - wrapcheck
+    - wsl
+    - zerologlint
   settings:
-    cyclop:
-      max-complexity: 30
-      package-average: 10
+    exhaustive:
+      # Program elements to check for exhaustiveness.
+      # Default: [ switch ]
+      check:
+        - switch
+        - map
+      # Presence of "default" case in switch statements satisfies exhaustiveness,
+      # even if all enum members are not listed.
+      # Default: false
+      default-signifies-exhaustive: true
+    gosec:
+      excludes:
+        - G104
+    revive:
+      rules:
+        - name: blank-imports
+          disabled: true
     depguard:
       rules:
-        legacy:
+        all:
           deny:
-            - pkg: math/rand$
-              desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
-            - pkg: github.com/golang/protobuf
-              desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
-            - pkg: github.com/satori/go.uuid
-              desc: Use github.com/google/uuid instead, satori's package is not maintained
-            - pkg: github.com/gofrs/uuid$
-              desc: Use github.com/gofrs/uuid/v5 or later, it was not a go module before v5
-    errcheck:
-      check-type-assertions: true
+            - pkg: io/ioutil
+              desc: io/ioutil package has been deprecated
+    funlen:
+      # Checks the number of lines in a function.
+      # If lower than 0, disable the check.
+      # Default: 60
+      lines: 200
+      # Checks the number of statements in a function.
+      # If lower than 0, disable the check.
+      # Default: 40
+      statements: 100
+    wsl:
+      # Allows assignments to be cuddled with variables used in calls on
+      # line above and calls to be cuddled with assignments of variables
+      # used in call on line above.
+      # https://github.com/bombsimon/wsl/blob/HEAD/doc/configuration.md#allow-assign-and-call
+      # Default: true
+      allow-assign-and-call: false
+      # If the number of lines in a case block is equal to or lager than this number,
+      # the case *must* end white a newline.
+      # https://github.com/bombsimon/wsl/blob/HEAD/doc/configuration.md#force-case-trailing-whitespace
+      # Default: 0
+      force-case-trailing-whitespace: 1
+      # Causes an error when an If statement that checks an error variable doesn't
+      # cuddle with the assignment of that variable.
+      # https://github.com/bombsimon/wsl/blob/HEAD/doc/configuration.md#force-err-cuddling
+      # Default: false
+      force-err-cuddling: true
+      allow-trailing-comment: true
+      allow-separated-leading-comment: true
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+          xml: camel
+          bson: camel
+          avro: snake
+          mapstructure: kebab
+    cyclop:
+      # The maximal code complexity to report.
+      # Default: 10
+      max-complexity: 20
     exhaustruct:
       exclude:
         - ^net/http.Client$
@@ -95,6 +166,7 @@ linters:
         - ^net/http.Server$
         - ^net/http.Transport$
         - ^net/url.URL$
+        - ^log/slog.HandlerOptions$
         - ^os/exec.Cmd$
         - ^reflect.StructField$
         - ^github.com/Shopify/sarama.Config$
@@ -109,103 +181,31 @@ linters:
         - ^golang.org/x/tools/go/analysis.Analyzer$
         - ^google.golang.org/protobuf/.+Options$
         - ^gopkg.in/yaml.v3.Node$
-    gochecksumtype:
-      default-signifies-exhaustive: false
-    gocritic:
-      settings:
-        captLocal:
-          paramsOnly: false
-        underef:
-          skipRecvDeref: false
-    gosec:
-      excludes:
-        - G401
-    govet:
-      disable:
-        - fieldalignment
-      enable-all: true
-      settings:
-        shadow:
-          strict: true
-    inamedparam:
-      skip-single-param: true
-    mnd:
-      ignored-functions:
-        - args.Error
-        - flag.Arg
-        - flag.Duration.*
-        - flag.Float.*
-        - flag.Int.*
-        - flag.Uint.*
-        - os.Chmod
-        - os.Mkdir.*
-        - os.OpenFile
-        - os.WriteFile
-        - prometheus.ExponentialBuckets.*
-        - prometheus.LinearBuckets
-    perfsprint:
-      strconcat: false
-    reassign:
-      patterns:
-        - .*
-    revive:
-      rules:
-        - name: blank-imports
-          disabled: true
-    rowserrcheck:
-      packages:
-        - github.com/jmoiron/sqlx
-    sloglint:
-      no-global: all
-      context: scope
-    usetesting:
-      os-temp-dir: true
+        - ^github.com/golang-jwt/jwt.v5.RegisteredClaims$
+        - ^github.com/golang-migrate/migrate.v4.database.pgx.v5.Config$
+        - ^github.com/redis/go-redis.v9.Options$
   exclusions:
     generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
     rules:
       - linters:
-          - govet
-        text: 'shadow: declaration of "(err|errs|ok|ctx)" shadows declaration at'
-      - linters:
-          - gocritic
-        source: //noinspection
-      - linters:
-          - wrapcheck
-        path: internal/repository
-      - linters:
-          - staticcheck
-        text: 'ST1003: should not use ALL_CAPS in Go names'
-      - linters:
-          - staticcheck
-        text: 'ST1003: should not use underscores in Go names'
+          - errcheck
+        source: "^\\s*defer\\s+"
       - linters:
           - bodyclose
           - dupl
+          - err113
           - errcheck
+          - exhaustruct
           - funlen
           - goconst
           - gosec
+          - maintidx
           - noctx
           - wrapcheck
         path: _test\.go
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
-issues:
-  max-same-issues: 50
 formatters:
   enable:
-    - gofumpt
+    - gofmt
+    # Linter broken, but formatter is fine
+    # - gofumpt
     - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$

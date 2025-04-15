@@ -18,7 +18,7 @@ func TestGetTypeMap(t *testing.T) {
 			name:  "Single var",
 			input: "{{ name }}",
 			expected: analyzer.TypeMap{
-				"name": types.Any,
+				"name": types.String,
 			},
 		},
 		{
@@ -32,19 +32,123 @@ func TestGetTypeMap(t *testing.T) {
 			name:  "Var equal var",
 			input: "{{ name == surname }}",
 			expected: analyzer.TypeMap{
-				"name":    types.Any,
+				"name":    types.VarType("surname"),
 				"surname": types.Any,
 			},
-			errExpected: false,
+		},
+		{
+			name:  "Var not equal var",
+			input: "{{ name != surname }}",
+			expected: analyzer.TypeMap{
+				"name":    types.VarType("surname"),
+				"surname": types.Any,
+			},
+		},
+		{
+			name:  "Var is string",
+			input: "{{ name is 'asd' }}",
+			expected: analyzer.TypeMap{
+				"name": types.String,
+			},
+		},
+		{
+			name:  "Var and var",
+			input: "{{ name and b }}",
+			expected: analyzer.TypeMap{
+				"name": types.Boolean,
+				"b":    types.Boolean,
+			},
+		},
+		{
+			name:  "Var equal number",
+			input: "{{ a == 1 }}",
+			expected: analyzer.TypeMap{
+				"a": types.Number,
+			},
+		},
+		{
+			name:  "Var && var",
+			input: "{{ name && b }}",
+			expected: analyzer.TypeMap{
+				"name": types.Boolean,
+				"b":    types.Boolean,
+			},
+		},
+		{
+			name: "Vars infer boolean and then one of them used as string",
+			input: `
+{{ name and b }}
+{{ name }}
+`[1:],
+			expected: analyzer.TypeMap{
+				"name": types.String,
+				"b":    types.Boolean,
+			},
+		},
+		{
+			name: "Simple uniyfing of two vars to string",
+			input: `
+{{ a == b }}
+{{ a }}
+`[1:],
+			expected: analyzer.TypeMap{
+				"a": types.VarType("b"),
+				"b": types.String,
+			},
+		},
+		{
+			name: "Simple uniyfing of two vars to string",
+			input: `
+{{ a == b }}
+{% if a %}
+{%end%}
+`[1:],
+			expected: analyzer.TypeMap{
+				"a": types.VarType("b"),
+				"b": types.Boolean,
+			},
+		},
+		{
+			name:  "Vars and string",
+			input: "{{ name and 'asd' }}",
+			expected: analyzer.TypeMap{
+				"name": types.Boolean,
+			},
+		},
+		{
+			name: "Var infer boolean and then used as string",
+			input: `
+{{ name and 'asd' }}
+{{ name }}
+`[1:],
+			expected: analyzer.TypeMap{
+				"name": types.String,
+			},
+		},
+		{
+			name:  "Vars or number",
+			input: "{{ name or 1 }}",
+			expected: analyzer.TypeMap{
+				"name": types.Boolean,
+			},
+		},
+
+		{
+			name:  "Parens changing precedence 1",
+			input: "{{(a or b) and c}}",
+			expected: analyzer.TypeMap{
+				"a": types.Boolean,
+				"b": types.Boolean,
+				"c": types.Boolean,
+			},
 		},
 		{
 			name:  "Var greater than var",
 			input: "{{ name > surname }}",
 			expected: analyzer.TypeMap{
-				"name":    types.Number,
-				"surname": types.Number,
+				"surname": types.Any,
+				"name":    types.VarType("surname"),
 			},
-			errExpected: false,
 		},
 		{
 			name:  "Var greater than number",
@@ -52,15 +156,20 @@ func TestGetTypeMap(t *testing.T) {
 			expected: analyzer.TypeMap{
 				"name": types.Number,
 			},
-			errExpected: false,
+		},
+		{
+			name:  "Var less than number",
+			input: "{{ name < 1 }}",
+			expected: analyzer.TypeMap{
+				"name": types.Number,
+			},
 		},
 		{
 			name:  "Var greater than string",
 			input: "{{ name > 'asd'}}",
 			expected: analyzer.TypeMap{
-				"name": types.Number,
+				"name": types.String,
 			},
-			errExpected: false,
 		},
 		// {
 		// 	name: "Var + integer literal",
@@ -159,6 +268,17 @@ text
 			},
 		},
 		{
+			name: "If statement on var",
+			input: `
+{% if var == 2 %}
+text
+{% end %}
+`[1:],
+			expected: analyzer.TypeMap{
+				"var": types.Number,
+			},
+		},
+		{
 			name: "Else-if statement on var",
 			input: `
 {% if false %}
@@ -189,6 +309,38 @@ text123
 				"var2": types.Boolean,
 				"var3": types.Boolean,
 				"var4": types.Boolean,
+			},
+		},
+		{
+			name: "Switch statement on var",
+			input: `
+{% switch var %}
+{% case 1 %}
+{% case 2 %}
+{% end %}
+`[1:],
+			expected: analyzer.TypeMap{
+				"var": types.Number,
+			},
+		},
+		{
+			name: "Switch statement on var with different types",
+			input: `
+{% switch var %}
+{% case 1 %}
+{% case "a" %}
+{% case true %}
+{% end %}
+`[1:],
+			errExpected: analyzer.TypeErrors{
+				{
+					ExpectedType: types.String,
+					Name:         "var",
+				},
+				{
+					ExpectedType: types.Boolean,
+					Name:         "var",
+				},
 			},
 		},
 	}

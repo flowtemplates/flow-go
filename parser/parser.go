@@ -21,11 +21,13 @@ func newParser(tokens []token.Token) *parser {
 	}
 
 	p.next()
+
 	return p
 }
 
 func (p *parser) parse() (Ast, error) {
 	var nodes []Node
+
 	for p.pos < len(p.tokens) {
 		node, err := p.parseNode()
 		if err != nil {
@@ -46,6 +48,7 @@ func (p *parser) getCurrent() token.Token {
 	if p.pos < len(p.tokens) {
 		return p.tokens[p.pos]
 	}
+
 	return token.Token{Kind: token.EOF}
 }
 
@@ -58,8 +61,10 @@ func (p *parser) consumeToken(t token.Kind) string {
 	var val string
 	if p.currentToken.Kind == t {
 		val = p.currentToken.Val
+
 		p.next()
 	}
+
 	return val
 }
 
@@ -89,8 +94,10 @@ func (p *parser) parseNode() (Node, error) {
 	switch p.currentToken.Kind {
 	case token.TEXT:
 		return p.parseText(), nil
+
 	case token.LNBR:
 		return p.parseText(), nil
+
 	case token.WS:
 		if p.checkNextNTokens(token.LSTMT) {
 			if p.checkNextNTokens(token.LSTMT, token.END) || p.checkNextNTokens(token.LSTMT, token.WS, token.END) ||
@@ -99,25 +106,33 @@ func (p *parser) parseNode() (Node, error) {
 			}
 
 			ws := p.currentToken.Val
+
 			p.next()
+
 			return p.parseStmt(ws)
 		}
 
 		if p.checkNextNTokens(token.LCOMM) {
 			ws := p.currentToken.Val
+
 			p.next()
+
 			return p.parseComm(ws)
 		}
 
 		return p.parseText(), nil
+
 	case token.LEXPR:
 		return p.parseExprNode()
+
 	case token.LSTMT:
 		return p.parseStmt("")
+
 	case token.LCOMM:
 		return p.parseComm("")
 	// case token.EOF:
 	// 	return nil // End of input
+
 	default:
 		return nil, nil
 	}
@@ -125,12 +140,14 @@ func (p *parser) parseNode() (Node, error) {
 
 func (p *parser) parseText() *TextNode {
 	var res []string
+
 	for p.currentToken.IsOneOfMany(token.TEXT, token.LNBR, token.WS) {
 		if p.currentToken.Kind == token.WS && p.checkNextNTokens(token.LSTMT) {
 			break
 		}
 
 		res = append(res, p.currentToken.Val)
+
 		p.next()
 	}
 
@@ -153,12 +170,15 @@ func (p *parser) parseComm(preWs string) (*CommNode, error) {
 		Pos:   p.currentToken.Pos,
 		PreWs: preWs,
 	}
+
 	p.next() // Consume LCOMM
 
 	switch p.currentToken.Kind {
 	case token.COMM_TEXT:
 		commNode.Val = trimSpaces(p.currentToken.Val)
+
 		p.next()
+
 	case token.RCOMM:
 	default:
 		return nil, errors.New("unexpected token inside comment")
@@ -173,6 +193,7 @@ func (p *parser) parseComm(preWs string) (*CommNode, error) {
 
 	p.next()
 	p.consumeWhitespace()
+
 	commNode.PostLB = p.consumeLineBreak()
 
 	return &commNode, nil
@@ -192,10 +213,13 @@ func (p *parser) parseStmt(preWs string) (Node, error) {
 	switch p.currentToken.Kind {
 	case token.IF:
 		return p.parseIfStmt(preWs)
+
 	case token.GENIF:
 		return p.parseGenIfStmt()
+
 	case token.SWITCH:
 		return p.parseSwitchStmt(preWs)
+
 	default:
 		return nil, Error{
 			Pos: p.currentToken.Pos,
@@ -215,6 +239,7 @@ func (p *parser) consumeEndTag() error {
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
+
 	p.next() // Consume RSTMT
 
 	p.consumeWhitespace()
@@ -233,6 +258,7 @@ func (p *parser) parseElses(ifStmt *IfNode) error {
 				Typ: ErrEndExpected,
 			}
 		}
+
 		p.next() // Consume LSTMT
 		p.consumeWhitespace()
 
@@ -241,7 +267,9 @@ func (p *parser) parseElses(ifStmt *IfNode) error {
 			if err := p.consumeEndTag(); err != nil {
 				return err
 			}
+
 			ifStmt.EndTag = StmtTag{PreWs: preTagWs}
+
 			return nil
 
 		case token.ELSE:
@@ -254,7 +282,9 @@ func (p *parser) parseElses(ifStmt *IfNode) error {
 				if err != nil {
 					return err
 				}
+
 				ifStmt.ElseIfs = append(ifStmt.ElseIfs, elseIfNode)
+
 				continue
 			}
 
@@ -265,6 +295,7 @@ func (p *parser) parseElses(ifStmt *IfNode) error {
 					Tokens: []token.Kind{token.RSTMT},
 				}
 			}
+
 			p.next() // Consume RSTMT
 
 			p.consumeLineBreak()
@@ -294,7 +325,9 @@ func (p *parser) parseElses(ifStmt *IfNode) error {
 			if err := p.consumeEndTag(); err != nil {
 				return err
 			}
+
 			ifStmt.EndTag = StmtTag{PreWs: preEndTagWs}
+
 			return nil
 
 		default:
@@ -321,6 +354,7 @@ func (p *parser) parseElseIf(preTagWs string) (ClauseWithExpr, error) {
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
+
 	p.next() // Consume RSTMT
 
 	p.consumeLineBreak()
@@ -349,6 +383,7 @@ func (p *parser) parseIfStmt(preWs string) (Node, error) {
 			},
 		},
 	}
+
 	p.next() // Consume IF
 	p.consumeWhitespace()
 
@@ -356,6 +391,7 @@ func (p *parser) parseIfStmt(preWs string) (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ifStmt.IfTag.Expr = begTagBody
 
 	if p.currentToken.Kind != token.RSTMT {
@@ -364,6 +400,7 @@ func (p *parser) parseIfStmt(preWs string) (Node, error) {
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
+
 	p.next() // Consume RSTMT
 
 	p.consumeWhitespace()
@@ -373,6 +410,7 @@ func (p *parser) parseIfStmt(preWs string) (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ifStmt.Main = body
 
 	if err := p.parseElses(&ifStmt); err != nil {
@@ -390,6 +428,7 @@ func (p *parser) parseGenIfStmt() (Node, error) {
 			},
 		},
 	}
+
 	p.next() // Consume GENIF
 	p.consumeWhitespace()
 
@@ -397,6 +436,7 @@ func (p *parser) parseGenIfStmt() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	genifStmt.Expr = body
 
 	if p.currentToken.Kind != token.RSTMT {
@@ -405,6 +445,7 @@ func (p *parser) parseGenIfStmt() (Node, error) {
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
+
 	p.next() // Consume RSTMT
 
 	p.consumeWhitespace()
@@ -415,16 +456,17 @@ func (p *parser) parseGenIfStmt() (Node, error) {
 
 func (p *parser) parseBody() ([]Node, error) {
 	var body []Node
-	for {
-		// TODO: refactor
-		if p.currentToken.Kind == token.LSTMT &&
-			(p.checkNextNTokens(token.END) || p.checkNextNTokens(token.WS, token.END) ||
-				p.checkNextNTokens(token.ELSE) || p.checkNextNTokens(token.WS, token.ELSE) ||
-				p.checkNextNTokens(token.CASE) || p.checkNextNTokens(token.WS, token.CASE) ||
-				p.checkNextNTokens(token.DEFAULT) || p.checkNextNTokens(token.WS, token.DEFAULT)) {
-			break
-		}
 
+	for p.currentToken.Kind != token.LSTMT ||
+		(!p.checkNextNTokens(token.END) &&
+			!p.checkNextNTokens(token.WS, token.END) &&
+			!p.checkNextNTokens(token.ELSE) &&
+			!p.checkNextNTokens(token.WS, token.ELSE) &&
+			!p.checkNextNTokens(token.CASE) &&
+			!p.checkNextNTokens(token.WS, token.CASE) &&
+			!p.checkNextNTokens(token.DEFAULT) &&
+			!p.checkNextNTokens(token.WS, token.DEFAULT)) {
+		// TODO: refactor
 		node, err := p.parseNode()
 		if err != nil {
 			return body, err
@@ -433,8 +475,10 @@ func (p *parser) parseBody() ([]Node, error) {
 		if node == nil {
 			break
 		}
+
 		body = append(body, node)
 	}
+
 	return body, nil
 }
 
@@ -448,6 +492,7 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 				Typ: ErrEndExpected,
 			}
 		}
+
 		p.next() // Consume LSTMT
 		p.consumeWhitespace()
 
@@ -456,8 +501,11 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 			if err := p.consumeEndTag(); err != nil {
 				return err
 			}
+
 			switchStmt.EndTag = StmtTag{PreWs: preTagWs}
+
 			return nil
+
 		case token.CASE:
 			cc := ClauseWithExpr{
 				Tag: StmtTagWithExpr{
@@ -466,6 +514,7 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 					},
 				},
 			}
+
 			p.next()
 			p.consumeWhitespace()
 
@@ -473,6 +522,7 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 			if err != nil {
 				return err
 			}
+
 			cc.Tag.Expr = cExpr
 
 			if p.currentToken.Kind != token.RSTMT {
@@ -481,6 +531,7 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 					Tokens: []token.Kind{token.RSTMT},
 				}
 			}
+
 			p.next() // Consume RSTMT
 
 			p.consumeLineBreak()
@@ -489,9 +540,11 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 			if err != nil {
 				return err
 			}
+
 			cc.Body = b
 
 			switchStmt.Cases = append(switchStmt.Cases, cc)
+
 		case token.DEFAULT:
 			d := Clause{
 				Tag: StmtTag{
@@ -508,6 +561,7 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 					Tokens: []token.Kind{token.RSTMT},
 				}
 			}
+
 			p.next() // Consume RSTMT
 
 			p.consumeLineBreak()
@@ -537,7 +591,9 @@ func (p *parser) parseCases(switchStmt *SwitchNode) error {
 
 			switchStmt.EndTag = StmtTag{PreWs: preEndTagWs}
 			switchStmt.DefaultCase = &d
+
 			return nil
+
 		default:
 			return Error{
 				Pos: p.currentToken.Pos,
@@ -555,6 +611,7 @@ func (p *parser) parseSwitchStmt(preWs string) (Node, error) {
 			},
 		},
 	}
+
 	p.next() // Consume SWITCH
 	p.consumeWhitespace()
 
@@ -562,6 +619,7 @@ func (p *parser) parseSwitchStmt(preWs string) (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	switchStmt.SwitchTag.Expr = begTagBody
 
 	if p.currentToken.Kind != token.RSTMT {
@@ -570,6 +628,7 @@ func (p *parser) parseSwitchStmt(preWs string) (Node, error) {
 			Tokens: []token.Kind{token.RSTMT},
 		}
 	}
+
 	p.next() // Consume RSTMT
 
 	p.consumeWhitespace()

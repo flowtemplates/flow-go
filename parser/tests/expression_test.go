@@ -782,6 +782,7 @@ func TestOperators(t *testing.T) {
 func TestTernaries(t *testing.T) {
 	testCases := []testCase{
 		{
+			// FIXME: not valid
 			name:  "Simple ternary",
 			input: `{{flag?1:2}}`,
 			expected: []parser.Node{

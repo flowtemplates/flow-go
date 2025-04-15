@@ -7,53 +7,62 @@ import (
 	"github.com/flowtemplates/flow-go/renderer"
 )
 
-// func Typecheck(scope renderer.Scope, tm TypeMap) []TypeError {
-// 	errs := []TypeError{}
-// 	for name, typ := range tm {
-// 		if typ == types.Any {
-// 			continue
-// 		}
+type Analyzer struct {
+	Tm   TypeMap
+	Errs TypeErrors
+}
 
-// 		value, ok := scope[name]
-// 		if !ok {
-// 			scope[name] = typ.GetDefaultValue()
-// 		} else if !typ.IsValid(value) {
-// 			errs = append(errs, TypeError{
-// 				ExpectedType: typ,
-// 				Name:         name,
-// 				Val:          value,
-// 			})
-// 		}
-// 	}
+func New() *Analyzer {
+	return &Analyzer{
+		Tm:   TypeMap{},
+		Errs: TypeErrors{},
+	}
+}
 
-// 	if len(errs) != 0 {
-// 		return errs
-// 	}
+func Typecheck(scope renderer.Input, tm TypeMap) []TypeError {
+	errs := []TypeError{}
 
-// 	return nil
-// }
+	for name, typ := range tm {
+		prim := tm.getPrimitive(typ)
+		if prim == nil {
+			continue
+		}
 
-func TypeMapFromAst(ast []parser.Node, tm TypeMap, scope renderer.Scope) *TypeErrors {
-	context := renderer.ScopeToContext(scope)
-	errs := TypeErrors{}
-	parseNodes(ast, tm, context, &errs)
+		value, ok := scope[name]
+		if !ok {
+			scope[name] = prim
+		} else if !prim.IsValid(value) {
+			errs = append(errs, TypeError{
+				ExpectedType: *prim,
+				Name:         name,
+			})
+		}
+	}
 
-	if len(errs) > 0 {
-		return &errs
+	if len(errs) != 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func TypeMapFromBytes(input []byte, tm TypeMap, scope renderer.Scope) error {
+// TODO: make func that returns TypeMap and TypeErrors
+func (a *Analyzer) TypeMapFromAst(ast []parser.Node) {
+	a.parseNodes(ast)
+	//	if len(errs) > 0 {
+	//		return &errs
+	//	}
+	//
+	// return nil
+}
+
+func (a *Analyzer) TypeMapFromBytes(input []byte) error {
 	ast, err := parser.AstFromBytes(input)
 	if err != nil {
 		return fmt.Errorf("ast from bytes: %w", err)
 	}
 
-	if errs := TypeMapFromAst(ast, tm, scope); errs != nil {
-		return errs
-	}
+	a.TypeMapFromAst(ast)
 
 	return nil
 }
