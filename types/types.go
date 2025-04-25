@@ -26,6 +26,7 @@ func (t PrimitiveType) t() {}
 
 func (t PrimitiveType) IsValid(val any) bool {
 	fmt.Printf("%T, %s\n", val, val)
+
 	switch t {
 	case Number:
 		switch val.(type) {

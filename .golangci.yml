@@ -10,6 +10,7 @@ linters:
     - containedctx
     - contextcheck
     - copyloopvar
+    - cyclop
     - decorder
     - depguard
     - dogsled
@@ -30,6 +31,7 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoinits
     - gochecksumtype
+    - gocognit
     - goconst
     - gocritic
     - gocyclo
@@ -55,9 +57,9 @@ linters:
     - misspell
     - musttag
     - nakedret
+    - nestif
     - nilerr
     - nilnesserr
-    - nlreturn
     - noctx
     # - nolintlint
     - nonamedreturns
@@ -142,8 +144,6 @@ linters:
       # https://github.com/bombsimon/wsl/blob/HEAD/doc/configuration.md#force-err-cuddling
       # Default: false
       force-err-cuddling: true
-      allow-trailing-comment: true
-      allow-separated-leading-comment: true
     tagliatelle:
       case:
         rules:
@@ -193,13 +193,11 @@ linters:
       - linters:
           - bodyclose
           - dupl
-          - err113
           - errcheck
           - exhaustruct
           - funlen
           - goconst
           - gosec
-          - maintidx
           - noctx
           - wrapcheck
         path: _test\.go
