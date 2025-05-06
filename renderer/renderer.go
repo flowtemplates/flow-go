@@ -157,11 +157,8 @@ func exprToValue(expr parser.Expr, context Context) (value.Valuable, error) {
 			return nil, errors.New("unknown operator in unary expression")
 		}
 
-	// case *parser.NumberLit:
-	// 	return n.Value, nil
-	//
-	// case *parser.StringLit:
-	// 	return n.Value, nil
+	case *parser.BasicLit:
+		return n.Value, nil
 
 	case *parser.PipeExpr:
 		expr, err := exprToValue(n.X, context)
@@ -194,8 +191,9 @@ func exprToValue(expr parser.Expr, context Context) (value.Valuable, error) {
 		}
 
 		switch n.Op {
-		// case token.ADD:
-		// 	return x.Add(y), nil
+		case token.ADD:
+			return x.Add(y), nil
+
 		case token.NEQL, token.ISNOT:
 			return value.BooleanValue(x.AsString() != y.AsString()), nil
 

@@ -68,10 +68,10 @@ const (
 	// REM_ASSIGN // %=
 
 	MINUS // -
-	// ADD // +
-	// MUL // *
-	// DIV // /
-	// MOD // %
+	ADD   // +
+	MUL   // *
+	DIV   // /
+	MOD   // %
 
 	LEXPR // {{
 	REXPR // }}
@@ -148,10 +148,10 @@ var tokens = []string{
 	COLON:    ":",
 
 	MINUS: "-",
-	// ADD: "+",
-	// MUL: "*",
-	// DIV: "/",
-	// MOD: "%",
+	ADD:   "+",
+	MUL:   "*",
+	DIV:   "/",
+	MOD:   "%",
 
 	// ASSIGN:     "=",
 	// ADD_ASSIGN: "+=",

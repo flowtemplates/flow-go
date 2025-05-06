@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 type AST []Node
@@ -26,9 +27,8 @@ type (
 	}
 
 	BasicLit struct {
-		ValuePos token.Pos   // literal position
-		Kind     token.Token // token.INT, token.FLOAT, token.BOOL, token.STRING or token.NULL
-		Value    string      // literal string; e.g. 42, 3.14, 'a', "foo", true, false
+		ValuePos token.Pos      // literal position
+		Value    value.Valuable // literal string; e.g. 42, 3.14, 'a', "foo", true, false
 	}
 
 	// TODO:

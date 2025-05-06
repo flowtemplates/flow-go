@@ -1,8 +1,6 @@
 package analyzer
 
 import (
-	"fmt"
-
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/types"
 )
@@ -23,8 +21,6 @@ func (tm TypeMap) getPrimitive(typ types.Type) *types.PrimitiveType {
 		if primmitiveType, ok := t.(types.PrimitiveType); ok {
 			return &primmitiveType
 		}
-
-		fmt.Println("recursive get primitive")
 
 		return tm.getPrimitive(t)
 	}

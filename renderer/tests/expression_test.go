@@ -5,6 +5,8 @@ import (
 
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/renderer"
+	"github.com/flowtemplates/flow-go/token"
+	"github.com/flowtemplates/flow-go/value"
 )
 
 func TestExpressions(t *testing.T) {
@@ -19,54 +21,72 @@ func TestExpressions(t *testing.T) {
 			expected: "Hello world",
 			scope:    renderer.Input{},
 		},
+		{
+			name: "Int literal",
+			input: parser.AST{
+				&parser.Print{
+					Expr: &parser.BasicLit{
+						Value: value.NumberValue(1),
+					},
+				},
+			},
+			expected: "1",
+			scope:    renderer.Input{},
+		},
+		{
+			name: "Float literal",
+			input: parser.AST{
+				&parser.Print{
+					Expr: &parser.BasicLit{
+						Value: value.NumberValue(1.1),
+					},
+				},
+			},
+			expected: "1.1",
+			scope:    renderer.Input{},
+		},
+		{
+			name: "Boolean literal",
+			input: parser.AST{
+				&parser.Print{
+					Expr: &parser.BasicLit{
+						Value: value.BooleanValue(true),
+					},
+				},
+			},
+			expected: "",
+			scope:    renderer.Input{},
+		},
+		{
+			name: "String literal",
+			input: parser.AST{
+				&parser.Print{
+					Expr: &parser.BasicLit{
+						Value: value.StringValue("word"),
+					},
+				},
+			},
+			expected: "word",
+			scope:    renderer.Input{},
+		},
+		// TODO:
 		// {
-		// 	name:     "Int literal",
-		// 	input:    "{{1}}",
-		// 	expected: "1",
-		// 	scope:    renderer.Input{},
-		// },
-		// {
-		// 	name:     "Float literal",
-		// 	input:    "{{1.1}}",
-		// 	expected: "1.1",
-		// 	scope:    renderer.Input{},
-		// },
-		// {
-		// 	name:     "Boolean literal",
-		// 	input:    "{{true}}",
-		// 	expected: "",
-		// 	scope:    renderer.Input{},
-		// },
-		// {
-		// 	name:     "String literal in double quotes",
-		// 	input:    `{{"word"}}`,
-		// 	expected: "word",
-		// 	scope:    renderer.Input{},
-		// },
-		// {
-		// 	name:     "String literal in single quotes",
-		// 	input:    `{{'word'}}`,
-		// 	expected: "word",
-		// 	scope:    renderer.Input{},
-		// },
-		// {
-		// 	name:     "Addition",
-		// 	str:      "{{123+2}}",
-		// 	expected: "125",
-		// 	input: []parser.Node{
-		// 		parser.ExprBlock{
-		// 			Body: parser.BinaryExpr{
-		// 				X: parser.Lit{
+		// 	name: "Addition",
+		// 	input: parser.AST{
+		// 		&parser.Print{
+		// 			Expr: &parser.BinaryExpr{
+		// 				X: &parser.BasicLit{
 		// 					Value: value.NumberValue(123),
 		// 				},
 		// 				Op: token.ADD,
-		// 				Y: parser.Lit{
+		// 				Y: &parser.BasicLit{
 		// 					Value: value.NumberValue(2),
 		// 				},
 		// 			},
 		// 		},
 		// 	},
-		// 	scope:       renderer.Scope{},
+		// 	expected: "125",
+		// 	scope:    renderer.Input{},
 		// },
 		// {
 		// 	name:     "Subtraction",
@@ -130,67 +150,84 @@ func TestExpressions(t *testing.T) {
 	runTestCases(t, testCases)
 }
 
-//
-// func TestOperators(t *testing.T) {
-// 	testCases := []testCase{
-// 		{
-// 			name:     "String literals and",
-// 			input:    "{{'a' && 'b'}}",
-// 			expected: "b",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Number literals and",
-// 			input:    "{{1 && 2}}",
-// 			expected: "2",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Number literals falsy and",
-// 			input:    "{{0 && 0}}",
-// 			expected: "0",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Equality with empty string",
-// 			input:    "{{0 == ''}}",
-// 			expected: "",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Number literals or",
-// 			input:    "{{1 || 2}}",
-// 			expected: "1",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "0 || 'a'",
-// 			input:    "{{0 || 'a'}}",
-// 			expected: "a",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Multiple || with strings",
-// 			input:    "{{'a' || 'b' || 'c'}}",
-// 			expected: "a",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Multiple && with strings",
-// 			input:    "{{'a' && 'b' && 'c'}}",
-// 			expected: "c",
-// 			scope:    renderer.Input{},
-// 		},
-// 		{
-// 			name:     "Parens changing precedence 1",
-// 			input:    "{{('a' || 'b') && 'c'}}",
-// 			expected: "c",
-// 			scope:    renderer.Input{},
-// 		},
-// 	}
-// 	runTestCases(t, testCases)
-// }
-//
+func TestOperators(t *testing.T) {
+	testCases := []testCase{
+		{
+			name: "And",
+			input: parser.AST{
+				&parser.If{
+					Conditions: []parser.IfBranch{
+						{
+							Condition: &parser.BinaryExpr{
+								X: &parser.BasicLit{
+									Value: value.BooleanValue(true),
+								},
+								Op: token.AND,
+								Y: &parser.BasicLit{
+									Value: value.BooleanValue(true),
+								},
+							},
+							Body: parser.AST{
+								&parser.Text{
+									Value: "true",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: "true",
+			scope:    renderer.Input{},
+		},
+		{
+			name: "Or",
+			input: parser.AST{
+				&parser.If{
+					Conditions: []parser.IfBranch{
+						{
+							Condition: &parser.BinaryExpr{
+								X: &parser.BasicLit{
+									Value: value.BooleanValue(false),
+								},
+								Op: token.OR,
+								Y: &parser.BasicLit{
+									Value: value.BooleanValue(true),
+								},
+							},
+							Body: parser.AST{
+								&parser.Text{
+									Value: "true",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: "true",
+			scope:    renderer.Input{},
+		},
+		{
+			name: "Add",
+			input: parser.AST{
+				&parser.Print{
+					Expr: &parser.BinaryExpr{
+						X: &parser.BasicLit{
+							Value: value.NumberValue(1),
+						},
+						Op: token.ADD,
+						Y: &parser.BasicLit{
+							Value: value.NumberValue(3),
+						},
+					},
+				},
+			},
+			expected: "4",
+			scope:    renderer.Input{},
+		},
+	}
+	runTestCases(t, testCases)
+}
+
 // func TestTernaries(t *testing.T) {
 // 	testCases := []testCase{
 // 		{

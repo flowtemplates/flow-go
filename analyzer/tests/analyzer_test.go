@@ -12,7 +12,6 @@ func TestGetTypeMap(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "Plain text",
-			// input:    "Hello world",
 			input: &filetree.FileTree{
 				Files: []filetree.File{
 					{
@@ -358,4 +357,3 @@ func TestGetTypeMap(t *testing.T) {
 	}
 	runTestCases(t, testCases)
 }
-
