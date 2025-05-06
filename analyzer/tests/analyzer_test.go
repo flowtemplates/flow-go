@@ -4,26 +4,33 @@ import (
 	"testing"
 
 	"github.com/flowtemplates/flow-go/analyzer"
-	"github.com/flowtemplates/flow-go/filetree"
 	"github.com/flowtemplates/flow-go/parser"
+	"github.com/flowtemplates/flow-go/types"
 )
 
 func TestGetTypeMap(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "Plain text",
-			input: &filetree.FileTree{
-				Files: []filetree.File{
-					{
-						Content: parser.AST{
-							&parser.Text{
-								Value: "Hello world",
-							},
-						},
-					},
+			input: parser.AST{
+				&parser.Text{
+					Value: "Hello world",
 				},
 			},
 			expected: analyzer.TypeMap{},
+		},
+		{
+			name: "Single var",
+			input: parser.AST{
+				&parser.Print{
+					Expr: &parser.Ident{
+						Name: "foo",
+					},
+				},
+			},
+			expected: analyzer.TypeMap{
+				"foo": types.String,
+			},
 		},
 		// 		{
 		// 			name:  "Single var",

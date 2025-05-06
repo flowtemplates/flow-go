@@ -5,9 +5,8 @@ import (
 	"github.com/flowtemplates/flow-go/value"
 )
 
-type AST []Node
+type AST []Stmt
 
-// All node types implement the Node interface.
 type Node interface {
 	Pos() token.Pos // position of first character belonging to the node
 	// End() token.Pos // position of first character immediately after the node
@@ -238,3 +237,14 @@ func (x *TernaryExpr) expr()    {}
 func (x *ParenExpr) expr()      {}
 func (x *PipeExpr) expr()       {}
 func (x *TypeAssertExpr) expr() {}
+
+func (x *Comment) stmt()     {}
+func (x *Text) stmt()        {}
+func (x *Print) stmt()       {}
+func (x *If) stmt()          {}
+func (x *IfBranch) stmt()    {}
+func (x *Switch) stmt()      {}
+func (x *CaseClause) stmt()  {}
+func (x *Let) stmt()         {}
+func (x *Raw) stmt()         {}
+func (x *FilterBlock) stmt() {}

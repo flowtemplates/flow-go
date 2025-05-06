@@ -6,12 +6,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/flowtemplates/flow-go/analyzer"
-	"github.com/flowtemplates/flow-go/filetree"
+	"github.com/flowtemplates/flow-go/parser"
 )
 
 type testCase struct {
 	name        string
-	input       *filetree.FileTree
+	input       parser.AST
 	expected    analyzer.TypeMap
 	errExpected analyzer.TypeErrors
 }
@@ -21,7 +21,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tm, te := analyzer.TypeMapFromFileTree(tc.input)
+			tm, te := analyzer.TypeMapFromAST(tc.input)
 
 			if diff := cmp.Diff(te, tc.errExpected); diff != "" {
 				t.Errorf("errors mismatch (-got +want):\n%s", diff)

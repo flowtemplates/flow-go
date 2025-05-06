@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"github.com/flowtemplates/flow-go/filetree"
+	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/renderer"
 )
 
@@ -42,6 +43,18 @@ func Typecheck(scope renderer.Input, tm TypeMap) []TypeError {
 	}
 
 	return nil
+}
+
+func TypeMapFromAST(ast parser.AST) (TypeMap, TypeErrors) {
+	a := newAnalyzer()
+
+	a.parseNodes(ast)
+
+	if len(a.Errs) == 0 {
+		return a.Tm, nil
+	}
+
+	return a.Tm, a.Errs
 }
 
 func TypeMapFromFileTree(ft *filetree.FileTree) (TypeMap, TypeErrors) {
