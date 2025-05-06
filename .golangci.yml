@@ -108,6 +108,8 @@ linters:
     gosec:
       excludes:
         - G104
+        - G301
+        - G306
     revive:
       rules:
         - name: blank-imports
@@ -144,6 +146,8 @@ linters:
       # https://github.com/bombsimon/wsl/blob/HEAD/doc/configuration.md#force-err-cuddling
       # Default: false
       force-err-cuddling: true
+      # Default: false
+      allow-cuddle-declarations: true
     tagliatelle:
       case:
         rules:

@@ -1,9 +1,9 @@
 package renderer
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/flowtemplates/flow-go/parser"
 	"github.com/flowtemplates/flow-go/token"
@@ -21,94 +21,70 @@ func InputToContext(scope Input) Context {
 		context[name] = value.FromAny(val)
 	}
 
-	// TODO: check overwrite
-	context["true"] = value.BooleanValue(true)
-	context["false"] = value.BooleanValue(false)
-
 	return context
 }
 
-func render(ast []parser.Node, context Context) ([]byte, error) {
-	var buf bytes.Buffer
+func render(ast parser.AST, context Context) (string, error) {
+	var buf strings.Builder
 
 	for _, node := range ast {
 		switch n := node.(type) {
-		case *parser.TextNode:
-			for _, s := range n.Val {
-				buf.WriteString(s)
-			}
+		case *parser.Text:
+			buf.WriteString(n.Value)
 
-		case *parser.ExprNode:
-			s, err := exprToValue(n.Body, context)
+		case *parser.Print:
+			s, err := exprToValue(n.Expr, context)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
 
 			buf.WriteString(s.AsString())
 
-		case *parser.IfNode:
-			conditionValue, err := exprToValue(n.IfTag.Expr, context)
-			if err != nil {
-				return nil, err
-			}
-
-			if conditionValue.AsBoolean() {
-				bodyContent, err := render(n.Main, context)
+		case *parser.If:
+			for _, elseIf := range n.Conditions {
+				elifCondition, err := exprToValue(elseIf.Condition, context)
 				if err != nil {
-					return nil, err
-				}
-
-				buf.Write(bodyContent)
-
-				return buf.Bytes(), nil
-			}
-
-			for _, elseIf := range n.ElseIfs {
-				elifCondition, err := exprToValue(elseIf.Tag.Expr, context)
-				if err != nil {
-					return nil, err
+					return "", err
 				}
 
 				if elifCondition.AsBoolean() {
 					elifContent, err := render(elseIf.Body, context)
 					if err != nil {
-						return nil, err
+						return "", err
 					}
 
-					buf.Write(elifContent)
-
-					return buf.Bytes(), nil
+					buf.WriteString(elifContent)
 				}
 			}
 
-			elseContent, err := render(n.Else.Body, context)
+			elseContent, err := render(n.ElseBody, context)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
 
-			buf.Write(elseContent)
+			buf.WriteString(elseContent)
 
-		case *parser.SwitchNode:
-			switchValue, err := exprToValue(n.SwitchTag.Expr, context)
+		case *parser.Switch:
+			switchValue, err := exprToValue(n.Expr, context)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
 
 			caseMatched := false
 
 			for _, c := range n.Cases {
-				val, err := exprToValue(c.Tag.Expr, context)
+				val, err := exprToValue(c.Match, context)
 				if err != nil {
-					return nil, err
+					return "", err
 				}
 
 				if eql(switchValue, val) {
 					body, err := render(c.Body, context)
 					if err != nil {
-						return nil, err
+						return "", err
 					}
 
-					buf.Write(body)
+					buf.WriteString(body)
 
 					caseMatched = true
 
@@ -116,21 +92,21 @@ func render(ast []parser.Node, context Context) ([]byte, error) {
 				}
 			}
 
-			if !caseMatched && n.DefaultCase != nil {
-				body, err := render(n.DefaultCase.Body, context)
+			if !caseMatched && n.Default != nil {
+				body, err := render(n.Default, context)
 				if err != nil {
-					return nil, err
+					return "", err
 				}
 
-				buf.Write(body)
+				buf.WriteString(body)
 			}
 
 		default:
-			return nil, fmt.Errorf("unexpected node type in ast: %T", n)
+			return "", fmt.Errorf("unexpected node type in ast: %T", n)
 		}
 	}
 
-	return buf.Bytes(), nil
+	return buf.String(), nil
 }
 
 func eql(x, y value.Valuable) bool {
@@ -155,9 +131,9 @@ func exprToValue(expr parser.Expr, context Context) (value.Valuable, error) {
 
 		var exp parser.Expr
 		if conditionValue.AsBoolean() {
-			exp = n.TrueExpr
+			exp = n.ThenExpr
 		} else {
-			exp = n.FalseExpr
+			exp = n.ElseExpr
 		}
 
 		value, err := exprToValue(exp, context)
@@ -173,7 +149,7 @@ func exprToValue(expr parser.Expr, context Context) (value.Valuable, error) {
 			return nil, err
 		}
 
-		switch n.Op.Kind {
+		switch n.Op {
 		case token.EXCL, token.NOT:
 			return value.BooleanValue(!v.AsBoolean()), nil
 
@@ -181,22 +157,30 @@ func exprToValue(expr parser.Expr, context Context) (value.Valuable, error) {
 			return nil, errors.New("unknown operator in unary expression")
 		}
 
-	case *parser.NumberLit:
-		return n.Value, nil
+	// case *parser.NumberLit:
+	// 	return n.Value, nil
+	//
+	// case *parser.StringLit:
+	// 	return n.Value, nil
 
-	case *parser.StringLit:
-		return n.Value, nil
-
-	case *parser.FilterExpr:
-		expr, err := exprToValue(n.Expr, context)
+	case *parser.PipeExpr:
+		expr, err := exprToValue(n.X, context)
 		if err != nil {
 			return nil, err
 		}
 
-		return callFilter(n.Filter.Name, expr)
+		var val value.Valuable
+		for _, f := range n.Filters {
+			val, err = callFilter(f.Name, expr)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return val, nil
 
 	case *parser.ParenExpr:
-		return exprToValue(n.Expr, context)
+		return exprToValue(n.X, context)
 
 	case *parser.BinaryExpr:
 		x, err := exprToValue(n.X, context)
@@ -209,7 +193,7 @@ func exprToValue(expr parser.Expr, context Context) (value.Valuable, error) {
 			return nil, err
 		}
 
-		switch n.Op.Kind {
+		switch n.Op {
 		// case token.ADD:
 		// 	return x.Add(y), nil
 		case token.NEQL, token.ISNOT:

@@ -2,17 +2,108 @@ package parser
 
 import (
 	"github.com/flowtemplates/flow-go/token"
-	"github.com/flowtemplates/flow-go/value"
 )
 
-type Ast []Node
+type AST []Node
 
+// All node types implement the Node interface.
 type Node interface {
-	node()
+	Pos() token.Pos // position of first character belonging to the node
+	// End() token.Pos // position of first character immediately after the node
 }
 
 type Expr interface {
+	Node
 	expr()
+}
+
+type (
+	// A BadExpr node is a placeholder for an expression containing
+	// syntax errors for which a correct expression node cannot be
+	// created.
+	BadExpr struct {
+		From, To token.Pos
+	}
+
+	BasicLit struct {
+		ValuePos token.Pos   // literal position
+		Kind     token.Token // token.INT, token.FLOAT, token.BOOL, token.STRING or token.NULL
+		Value    string      // literal string; e.g. 42, 3.14, 'a', "foo", true, false
+	}
+
+	// TODO:
+	// Array struct {
+	// 	Elems  []Expr
+	// 	Lbrack token.Pos // position of "["
+	// 	Rbrack token.Pos // position of "]"
+	// }
+	//
+	// Object struct {
+	// 	Pairs  map[string]Expr
+	// 	Lbrack token.Pos // position of "{"
+	// 	Rbrack token.Pos // position of "}"
+	// }
+	//
+	// // Indexing: arr[0]
+	// IndexExpr struct {
+	// 	Target Expr
+	// 	Index  Expr
+	// 	Pos_   int
+	// }
+	// // Field access: obj.a
+	// FieldExpr struct {
+	// 	Target Expr
+	// 	Field  string
+	// 	Pos_   int
+	// }
+
+	Ident struct {
+		Name    string
+		NamePos token.Pos
+	}
+
+	UnaryExpr struct {
+		Op    token.Kind
+		OpPos token.Pos
+		Expr  Expr
+	}
+
+	BinaryExpr struct {
+		X     Expr
+		Op    token.Kind
+		OpPos token.Pos
+		Y     Expr
+	}
+
+	TernaryExpr struct {
+		Condition Expr
+		ThenOp    token.Kind
+		ThenExpr  Expr
+		ElseOp    token.Kind
+		ElseExpr  Expr
+	}
+
+	ParenExpr struct {
+		Lparen token.Pos
+		X      Expr
+		Rparen token.Pos
+	}
+
+	PipeExpr struct {
+		X       Expr
+		Filters []Filter
+	}
+
+	TypeAssertExpr struct {
+		Type    string
+		TypePos token.Pos
+		X       Expr
+	}
+)
+
+type Filter struct {
+	Name string
+	Args []Expr
 }
 
 type Stmt interface {
@@ -21,146 +112,129 @@ type Stmt interface {
 }
 
 type (
-	NumberLit struct {
-		Pos   token.Position
-		Value value.NumberValue
+	Comment struct {
+		Lbrace token.Pos
+		Rbrace token.Pos
+		Text   string
 	}
 
-	StringLit struct {
-		Pos   token.Position
-		Quote byte
-		Value value.StringValue
+	Text struct {
+		Value string
+		Pos_  token.Pos
 	}
 
-	Ident struct {
-		Pos  token.Position
-		Name string
+	Print struct {
+		Expr   Expr
+		Lbrace token.Pos
+		Rbrace token.Pos
 	}
 
-	Kw struct {
-		Kind token.Kind
-		Pos  token.Position
+	If struct {
+		Conditions []IfBranch
+		ElseBody   AST
 	}
 
-	UnaryExpr struct {
-		Op   Kw
-		Expr Expr
-	}
-
-	BinaryExpr struct {
-		X  Expr
-		Op Kw
-		Y  Expr
-	}
-
-	TernaryExpr struct {
+	IfBranch struct {
 		Condition Expr
-		Do        Kw
-		TrueExpr  Expr
-		Else      Kw
-		FalseExpr Expr
+		Body      AST
+		Lbrace    token.Pos
+		Rbrace    token.Pos
 	}
 
-	ParenExpr struct {
-		Expr
-		Lparen token.Position
-		Rparen token.Position
+	// ForStmt struct {
+	// 	KeyVar, ValueVar string
+	// 	Iterable         Expr
+	// 	Block            []Stmt
+	// 	Pos_             int
+	// }
+
+	Switch struct {
+		Expr    Expr
+		Cases   []CaseClause
+		Default AST
+		Pos_    token.Pos
 	}
 
-	FilterExpr struct {
-		Expr
-		OpPos  token.Position
-		Filter Ident
+	CaseClause struct {
+		Match Expr
+		Body  AST
+		Pos_  token.Pos
 	}
 
-	StmtTag struct {
-		PreWs string
-		// LStmt token.Position
-		// RStmt token.Position
+	Let struct {
+		Lhs  Expr
+		Rhs  Expr
+		Pos_ token.Pos
 	}
 
-	StmtTagWithKw struct {
-		StmtTag
-		Kw
+	// TODO: macros
+	// MacroDecl struct {
+	// 	Name       string
+	// 	Parameters []MacroParam
+	// 	Body       []Stmt
+	// 	Pos_       int
+	// }
+	// MacroCall struct {
+	// 	Name string
+	// 	Args []Expr
+	// 	Pos_ int
+	// }
+
+	// TODO: template inheritance
+	// Extends struct {
+	// 	TemplatePath string
+	// 	Pos_         int
+	// }
+	// BlockStmt struct {
+	// 	Name string
+	// 	Body []Stmt
+	// 	Pos_ int
+	// }
+
+	Raw struct {
+		Content string
+		Pos_    token.Pos
 	}
 
-	StmtTagWithExpr struct {
-		StmtTag
-		Expr
-	}
-
-	Clause struct {
-		Tag  StmtTag
-		Body []Node
-	}
-
-	ClauseWithExpr struct {
-		Tag  StmtTagWithExpr
-		Body []Node
-	}
-)
-
-// Nodes
-type (
-	CommNode struct {
-		PreWs string
-		Pos   token.Position
-		// TODO: store val without spaces on the sides to format properly
-		Val    string
-		PostLB string
-	}
-
-	TextNode struct {
-		Pos token.Position
-		Val []string
-	}
-
-	ExprNode struct {
-		// LBrace token.Position
-		Body Expr
-		// RBrace token.Position
-	}
-
-	GenifNode struct {
-		StmtTagWithExpr
-	}
-
-	IfNode struct {
-		IfTag   StmtTagWithExpr
-		Main    []Node
-		ElseIfs []ClauseWithExpr
-		Else    Clause
-		EndTag  StmtTag
-	}
-
-	SwitchNode struct {
-		SwitchTag   StmtTagWithExpr
-		Cases       []ClauseWithExpr
-		DefaultCase *Clause
-		EndTag      StmtTag
+	FilterBlock struct {
+		FilterName string
+		Body       AST
+		Pos_       token.Pos
 	}
 )
 
-func (*CommNode) node()   {}
-func (*TextNode) node()   {}
-func (*ExprNode) node()   {}
-func (*GenifNode) node()  {}
-func (*IfNode) node()     {}
-func (*SwitchNode) node() {}
+// type MacroParam struct {
+// 	Name    string
+// 	Type    string // optional, for future type checking
+// 	Default Expr   // can be nil
+// }
 
-// exprNode() ensures that only expression/type nodes can be
-// assigned to an Expr.
-func (*NumberLit) expr()   {}
-func (*StringLit) expr()   {}
-func (*Ident) expr()       {}
-func (*UnaryExpr) expr()   {}
-func (*BinaryExpr) expr()  {}
-func (*TernaryExpr) expr() {}
-func (*ParenExpr) expr()   {}
-func (*FilterExpr) expr()  {}
+func (x *BadExpr) Pos() token.Pos        { return x.From }
+func (x *BasicLit) Pos() token.Pos       { return x.ValuePos }
+func (x *Ident) Pos() token.Pos          { return x.NamePos }
+func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
+func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
+func (x *TernaryExpr) Pos() token.Pos    { return x.Condition.Pos() }
+func (x *ParenExpr) Pos() token.Pos      { return x.Lparen }
+func (x *PipeExpr) Pos() token.Pos       { return x.X.Pos() }
+func (x *TypeAssertExpr) Pos() token.Pos { return x.TypePos }
+func (x *Comment) Pos() token.Pos        { return x.Lbrace }
+func (x *Text) Pos() token.Pos           { return x.Pos_ }
+func (x *Print) Pos() token.Pos          { return x.Lbrace }
+func (x *If) Pos() token.Pos             { return x.Conditions[0].Lbrace }
+func (x *IfBranch) Pos() token.Pos       { return x.Lbrace }
+func (x *Switch) Pos() token.Pos         { return x.Pos_ }
+func (x *CaseClause) Pos() token.Pos     { return x.Pos_ }
+func (x *Let) Pos() token.Pos            { return x.Pos_ }
+func (x *Raw) Pos() token.Pos            { return x.Pos_ }
+func (x *FilterBlock) Pos() token.Pos    { return x.Pos_ }
 
-// stmtNode() ensures that only statement nodes can be
-// assigned to a Stmt.
-func (*IfNode) stmt()          {}
-func (*StmtTagWithExpr) stmt() {}
-func (*SwitchNode) stmt()      {}
+func (x *BadExpr) expr()        {}
+func (x *BasicLit) expr()       {}
+func (x *Ident) expr()          {}
+func (x *UnaryExpr) expr()      {}
+func (x *BinaryExpr) expr()     {}
+func (x *TernaryExpr) expr()    {}
+func (x *ParenExpr) expr()      {}
+func (x *PipeExpr) expr()       {}
+func (x *TypeAssertExpr) expr() {}

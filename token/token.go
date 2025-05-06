@@ -38,10 +38,9 @@ func (k Kind) IsLogicalOp() bool {
 
 const (
 	EOF Kind = iota
-	ILLEGAL
 
 	valuable_beg
-	COMM_TEXT
+	COMM
 	LNBR
 	TEXT
 	WS
@@ -120,7 +119,6 @@ const (
 	FOR     // for
 	LET     // let
 	IF      // if
-	GENIF   // genif
 	ELSE    // else
 	SWITCH  // switch
 	END     // end
@@ -132,13 +130,12 @@ const (
 )
 
 var tokens = []string{
-	EOF:     "EOF",
-	ILLEGAL: "ILLEGAL",
+	EOF: "EOF",
 
-	COMM_TEXT: "COMMENT",
-	TEXT:      "TEXT",
-	LNBR:      "LBR",
-	WS:        "WHITESPACE",
+	COMM: "COMMENT",
+	TEXT: "TEXT",
+	LNBR: "LBR",
+	WS:   "WHITESPACE",
 
 	IDENT: "IDENT",
 	INT:   "INT",
@@ -196,7 +193,6 @@ var tokens = []string{
 	FOR:     "for",
 	LET:     "let",
 	IF:      "if",
-	GENIF:   "genif",
 	ELSE:    "else",
 	SWITCH:  "switch",
 	END:     "end",
@@ -219,7 +215,7 @@ const (
 type Token struct {
 	Kind
 	Val string
-	Pos Position
+	Pos Pos
 }
 
 func (t Token) String() string {

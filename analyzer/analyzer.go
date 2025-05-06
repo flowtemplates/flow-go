@@ -63,7 +63,7 @@ func (tm TypeMap) addToTypeMap(name string, typ types.Type) (types.Type, *TypeEr
 	return types.VarType(name), nil
 }
 
-func (a *Analyzer) equalTypes(typ1, typ2 types.Type) types.Type {
+func (a analyzer) equalTypes(typ1, typ2 types.Type) types.Type {
 	if xVarType, ok1 := typ1.(types.VarType); ok1 {
 		t, err := a.Tm.addToTypeMap(string(xVarType), typ2)
 		if err != nil {
@@ -76,41 +76,37 @@ func (a *Analyzer) equalTypes(typ1, typ2 types.Type) types.Type {
 	return nil
 }
 
-func (a *Analyzer) parseNodes(ast []parser.Node) {
+func (a analyzer) parseNodes(ast parser.AST) {
 	for _, node := range ast {
 		switch n := node.(type) {
-		case *parser.ExprNode:
-			a.parseExpressionTypes(n.Body, types.String)
+		case *parser.Print:
+			a.parseExpressionTypes(n.Expr, types.String)
 
-		case *parser.IfNode:
-			a.parseExpressionTypes(n.IfTag.Expr, types.Boolean)
-			a.parseNodes(n.Main)
-
-			for _, elseIf := range n.ElseIfs {
-				a.parseExpressionTypes(elseIf.Tag.Expr, types.Boolean)
-				a.parseNodes(elseIf.Body)
+		case *parser.If:
+			for _, condition := range n.Conditions {
+				a.parseExpressionTypes(condition.Condition, types.Boolean)
+				a.parseNodes(condition.Body)
 			}
 
-			a.parseExpressionTypes(n.IfTag.Expr, types.Boolean)
-			a.parseNodes(n.Main)
+			a.parseNodes(n.ElseBody)
 
-		case *parser.SwitchNode:
-			switchType := a.parseExpressionTypes(n.SwitchTag.Expr, types.Any)
+		case *parser.Switch:
+			switchType := a.parseExpressionTypes(n.Expr, types.Any)
 
 			for _, c := range n.Cases {
-				caseTyp := a.parseExpressionTypes(c.Tag.Expr, switchType)
+				caseTyp := a.parseExpressionTypes(c.Match, switchType)
 				a.equalTypes(switchType, caseTyp)
 				a.parseNodes(c.Body)
 			}
 
-			if n.DefaultCase != nil {
-				a.parseNodes(n.DefaultCase.Body)
+			if n.Default != nil {
+				a.parseNodes(n.Default)
 			}
 		}
 	}
 }
 
-func (a *Analyzer) parseExpressionTypes(expr parser.Expr, typ types.Type) types.Type {
+func (a analyzer) parseExpressionTypes(expr parser.Expr, typ types.Type) types.Type {
 	switch e := expr.(type) {
 	case *parser.Ident:
 		t, err := a.Tm.addToTypeMap(e.Name, typ)
@@ -120,25 +116,22 @@ func (a *Analyzer) parseExpressionTypes(expr parser.Expr, typ types.Type) types.
 
 		return t
 
-	case *parser.StringLit:
-		return e.Value.Type()
+	// case *parser.BasicLit:
+	// return e.Value.Type()
 
-	case *parser.NumberLit:
-		return e.Value.Type()
-
-	case *parser.FilterExpr:
-		a.parseExpressionTypes(e.Expr, types.String)
+	case *parser.PipeExpr:
+		a.parseExpressionTypes(e.X, types.String)
 
 	case *parser.TernaryExpr:
 		a.parseExpressionTypes(e.Condition, types.Boolean)
-		a.parseExpressionTypes(e.TrueExpr, typ)
-		a.parseExpressionTypes(e.FalseExpr, typ)
+		a.parseExpressionTypes(e.ThenExpr, typ)
+		a.parseExpressionTypes(e.ElseExpr, typ)
 
 	case *parser.ParenExpr:
-		a.parseExpressionTypes(e.Expr, typ)
+		a.parseExpressionTypes(e.X, typ)
 
 	case *parser.BinaryExpr:
-		if e.Op.Kind.IsLogicalOp() {
+		if e.Op.IsLogicalOp() {
 			a.parseExpressionTypes(e.X, types.Boolean)
 			a.parseExpressionTypes(e.Y, types.Boolean)
 		} else {

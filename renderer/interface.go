@@ -1,34 +1,27 @@
 package renderer
 
 import (
-	"fmt"
-
+	"github.com/flowtemplates/flow-go/filetree"
 	"github.com/flowtemplates/flow-go/parser"
 )
 
-func RenderAst(ast []parser.Node, scope Input) ([]byte, error) {
-	// tm := make(analyzer.TypeMap)
-	// if errs := analyzer.GetTypeMapFromAst(ast, tm); len(errs) != 0 {
-	// 	return "", errs[0] // TODO: error handling
-	// }
-	// if errs := analyzer.Typecheck(scope, tm); len(errs) != 0 {
-	// 	return "", errs[0] // TODO: error handling
-	// }
-	context := InputToContext(scope)
-
-	return render(ast, context)
+type File struct {
+	Name   string
+	Source string
 }
 
-func RenderBytes(input []byte, scope Input) ([]byte, error) {
-	ast, err := parser.AstFromBytes(input)
-	if err != nil {
-		return nil, fmt.Errorf("ast from bytes: %w", err)
-	}
+type Dir struct {
+	Name  string
+	Files []File
+	Dirs  []Dir
+}
 
-	res, err := RenderAst(ast, scope)
-	if err != nil {
-		return nil, err
-	}
+func RenderFileTree(ft *filetree.FileTree, input Input) (Dir, error) {
+	return Dir{}, nil
+}
 
-	return res, nil
+func RenderTemplate(ast parser.AST, input Input) (string, error) {
+	context := InputToContext(input)
+
+	return render(ast, context)
 }

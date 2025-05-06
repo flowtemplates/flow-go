@@ -1,19 +1,17 @@
 package analyzer
 
 import (
-	"fmt"
-
-	"github.com/flowtemplates/flow-go/parser"
+	"github.com/flowtemplates/flow-go/filetree"
 	"github.com/flowtemplates/flow-go/renderer"
 )
 
-type Analyzer struct {
+type analyzer struct {
 	Tm   TypeMap
 	Errs TypeErrors
 }
 
-func New() *Analyzer {
-	return &Analyzer{
+func newAnalyzer() *analyzer {
+	return &analyzer{
 		Tm:   TypeMap{},
 		Errs: TypeErrors{},
 	}
@@ -46,23 +44,24 @@ func Typecheck(scope renderer.Input, tm TypeMap) []TypeError {
 	return nil
 }
 
-// TODO: make func that returns TypeMap and TypeErrors
-func (a *Analyzer) TypeMapFromAst(ast []parser.Node) {
-	a.parseNodes(ast)
-	//	if len(errs) > 0 {
-	//		return &errs
-	//	}
-	//
-	// return nil
-}
+func TypeMapFromFileTree(ft *filetree.FileTree) (TypeMap, TypeErrors) {
+	a := newAnalyzer()
 
-func (a *Analyzer) TypeMapFromBytes(input []byte) error {
-	ast, err := parser.AstFromBytes(input)
-	if err != nil {
-		return fmt.Errorf("ast from bytes: %w", err)
+	a.analyzeDir((*filetree.Dir)(ft))
+
+	if len(a.Errs) == 0 {
+		return a.Tm, nil
 	}
 
-	a.TypeMapFromAst(ast)
+	return a.Tm, a.Errs
+}
 
-	return nil
+func (a analyzer) analyzeDir(d *filetree.Dir) {
+	for _, dir := range d.Dirs {
+		a.analyzeDir(&dir)
+	}
+
+	for _, file := range d.Files {
+		a.parseNodes(file.Content)
+	}
 }
